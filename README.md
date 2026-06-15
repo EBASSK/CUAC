@@ -140,7 +140,7 @@ flutter run
 ### Pasos
 
 ```bash
-git clone https://github.com/tu-usuario/lab-instrument-identifier.git
+git clone https:
 cd lab_instrument_identifier
 flutter pub get
 flutter run
