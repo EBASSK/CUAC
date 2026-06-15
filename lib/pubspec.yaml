@@ -108,6 +108,6 @@
         - asset: assets/fonts/Roboto-Bold.ttf
           weight: 700
 
-# 🔥 ESTO VA AFUERA
+
 dependency_overrides:
   tflite_flutter: 0.12.1
