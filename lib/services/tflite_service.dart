@@ -1,315 +1,301 @@
 import 'package:tflite_flutter/tflite_flutter.dart';
-import 'package:image/image.dart' as img;
 import 'package:logger/logger.dart';
-import 'dart:typed_data';
 import 'dart:math' as math;
 import 'package:flutter/services.dart';
 import '../config/app_config.dart';
+import 'model_image_preprocessor.dart';
 
-// Servicio principal para integración con TensorFlow Lite
-// Gestiona la carga del modelo de IA, preprocesamiento de imágenes
-// y ejecución de inferencias para clasificación de instrumentos
+/// Coordina el modelo TensorFlow Lite que clasifica instrumentos localmente.
+///
+/// Carga el intérprete y sus etiquetas, valida que ambos sean compatibles,
+/// transforma las imágenes al tensor esperado y ordena las predicciones. Se
+/// comparte una sola instancia para no duplicar el modelo en memoria.
 class TFLiteService {
-  // Singleton pattern: una sola instancia para toda la aplicación
-  // Evita cargar múltiples modelos en memoria
+  // Instancia única utilizada por toda la aplicación.
   static final TFLiteService _instance = TFLiteService._internal();
 
-  // Referencia al intérprete de TensorFlow Lite
-  // Es el objeto principal que ejecuta el modelo
+  // Motor nativo que ejecuta el modelo; es nulo antes de inicializar o después
+  // de liberar el servicio.
   Interpreter? _interpreter;
 
-  // Lista de etiquetas/clases que el modelo puede predecir
-  // Se mapean con los índices de salida del modelo
+  // Cada posición debe corresponder al mismo índice del vector de salida.
   List<String> _labels = [];
 
-  // Flag para saber si el servicio está listo para usar
+  // El Future pendiente evita que varias pantallas carguen el modelo a la vez.
   bool _isInitialized = false;
+  Future<void>? _initializationFuture;
 
-  // Logger para debugging y monitoreo
+  // Dependencias internas para diagnóstico y adaptación de las imágenes.
   final Logger _logger = Logger();
+  final ModelImagePreprocessor _preprocessor = const ModelImagePreprocessor();
 
   // Etiquetas en orden alfabético (coinciden con labels.txt y el modelo)
   // IMPORTANTE: El orden DEBE coincidir con el modelo entrenado
   static const List<String> _defaultLabels = [
-    'Buretas',              // Dosificación volumétrica (índice 0)
-    'Crisoles',             // Calentamiento y fusión (índice 1)
-    'Embudos',              // Transferencia de líquidos (índice 2)
-    'Gradillas',            // Organización y soporte (índice 3)
-    'Matraces',             // Contenedores volumétricos (índice 4)
-    'Microscopio',          // Instrumentos ópticos (índice 5)
-    'Pinzas',               // Sujeción y manipulación (índice 6)
-    'Pipetas',              // Medición precisa de líquidos (índice 7)
-    'Probeta',              // Medición de volúmenes (índice 8)
+    'Buretas', // Dosificación volumétrica (índice 0)
+    'Crisoles', // Calentamiento y fusión (índice 1)
+    'Embudos', // Transferencia de líquidos (índice 2)
+    'Gradillas', // Organización y soporte (índice 3)
+    'Matraces', // Contenedores volumétricos (índice 4)
+    'Microscopio', // Instrumentos ópticos (índice 5)
+    'Pinzas', // Sujeción y manipulación (índice 6)
+    'Pipetas', // Medición precisa de líquidos (índice 7)
+    'Probeta', // Medición de volúmenes (índice 8)
     'Vasos de precipitado', // Contenedores de reacción (índice 9)
   ];
 
-  // Constructor factory para singleton
   factory TFLiteService() {
     return _instance;
   }
 
-  // Constructor privado para singleton
   TFLiteService._internal();
 
-  // Getters públicos para acceder al estado
+  /// Indica si el modelo superó la carga y la validación de contrato.
   bool get isInitialized => _isInitialized;
+
+  /// Etiquetas asociadas, en orden, a las posiciones de salida del modelo.
   List<String> get labels => _labels;
 
-  /// Inicializa el servicio de TensorFlow Lite
-  /// Carga el modelo, configura el intérprete y prepara las etiquetas
-  /// Este método es asíncrono porque la carga del modelo puede tomar tiempo
+  /// Inicializa TensorFlow Lite y comparte una inicialización que ya esté activa.
+  ///
+  /// No vuelve a cargar un servicio listo. Si la carga falla, el mismo error se
+  /// propaga al llamador y una llamada futura podrá volver a intentarlo.
   Future<void> initialize() async {
-    // Evita inicialización duplicada
     if (_isInitialized) {
       _logger.i('TFLite ya está inicializado');
       return;
     }
 
+    final pendingInitialization = _initializationFuture;
+    if (pendingInitialization != null) {
+      return pendingInitialization;
+    }
+
+    final initialization = _initialize();
+    _initializationFuture = initialization;
+
+    try {
+      await initialization;
+    } finally {
+      _initializationFuture = null;
+    }
+  }
+
+  /// Ejecuta la carga real y deja el servicio listo solo al completar cada paso.
+  /// Ante un error cierra cualquier intérprete parcial y conserva las etiquetas
+  /// predeterminadas como información de respaldo para la interfaz.
+  Future<void> _initialize() async {
     try {
       _logger.i('Inicializando TensorFlow Lite...');
 
-      // Configuración del intérprete con opciones optimizadas
-      // Estas opciones mejoran el rendimiento en dispositivos móviles
+      // Punto central para configurar optimizaciones del intérprete móvil.
       final interpreterOptions = InterpreterOptions();
 
-      // Cargar el modelo desde los assets de Flutter
-      // El modelo debe estar en assets/models/instrument_model.tflite
-      _interpreter = await Interpreter.fromAsset(AppConfig.modelPath, options: interpreterOptions);
+      // La ruta del recurso está centralizada en AppConfig.
+      _interpreter = await Interpreter.fromAsset(AppConfig.modelPath,
+          options: interpreterOptions);
 
-      // Verificar que el modelo se cargó correctamente
+      // La forma se registra para diagnosticar modelos exportados incorrectamente.
       _logger.i('Modelo cargado, verificando forma de entrada...');
       final inputShape = _interpreter!.getInputTensors()[0].shape;
       _logger.i('Forma de entrada del modelo: $inputShape');
 
-      // Cargar etiquetas
+      // Las etiquetas deben cargarse antes de validar el tamaño de la salida.
       await _loadLabels();
+      _validateModelContract();
 
       _isInitialized = true;
-      _logger.i('✅ TFLite inicializado con ${_labels.length} clases');
+      _logger.i('TFLite inicializado con ${_labels.length} clases');
     } catch (e, stackTrace) {
-      _logger.e('❌ Error inicializando TFLite: $e');
+      _logger.e('Error inicializando TFLite: $e');
       _logger.e('Stack trace: $stackTrace');
 
-      // Fallback: usar etiquetas por defecto
+      _interpreter?.close();
+      _interpreter = null;
       _labels = _defaultLabels;
-      _isInitialized = true;
-      _logger.w('⚠️  Usando etiquetas por defecto');
-      rethrow; // Re-lanzar el error para que el splash lo maneje
+      _isInitialized = false;
+      _logger.w('Usando etiquetas por defecto');
+      rethrow;
     }
   }
 
-  /// Carga etiquetas desde archivo
+  /// Comprueba el contrato crítico entre la aplicación y el archivo `.tflite`.
+  ///
+  /// La entrada debe ser un lote RGB `float32` del tamaño configurado y la
+  /// última dimensión de salida debe coincidir con el número de etiquetas.
+  void _validateModelContract() {
+    final interpreter = _interpreter;
+    if (interpreter == null) {
+      throw StateError('El intérprete TFLite no está disponible');
+    }
+
+    final inputTensor = interpreter.getInputTensors().first;
+    final outputTensor = interpreter.getOutputTensors().first;
+    final expectedInputShape = [
+      1,
+      AppConfig.modelInputSize,
+      AppConfig.modelInputSize,
+      3,
+    ];
+
+    if (!_sameShape(inputTensor.shape, expectedInputShape)) {
+      throw StateError(
+        'Forma de entrada incompatible: ${inputTensor.shape}; '
+        'se esperaba $expectedInputShape',
+      );
+    }
+
+    if (inputTensor.type != TensorType.float32) {
+      throw StateError(
+        'Tipo de entrada incompatible: ${inputTensor.type}; '
+        'se esperaba float32',
+      );
+    }
+
+    if (outputTensor.shape.isEmpty ||
+        outputTensor.shape.last != _labels.length) {
+      throw StateError(
+        'El modelo produce ${outputTensor.shape} pero existen '
+        '${_labels.length} etiquetas',
+      );
+    }
+  }
+
+  /// Compara dimensiones en orden exacto, incluido el tamaño del lote.
+  bool _sameShape(List<int> actual, List<int> expected) {
+    if (actual.length != expected.length) return false;
+    for (var index = 0; index < actual.length; index++) {
+      if (actual[index] != expected[index]) return false;
+    }
+    return true;
+  }
+
+  /// Carga y normaliza las etiquetas declaradas en los recursos de Flutter.
+  /// Si el recurso no está disponible, usa [_defaultLabels] y no interrumpe la
+  /// inicialización; la validación posterior confirmará si su cantidad coincide.
   Future<void> _loadLabels() async {
     try {
-      // Cargar desde el archivo configurado en AppConfig
       final labelsContent = await rootBundle.loadString(AppConfig.labelsPath);
       final labelsList = labelsContent.trim().split('\n');
-      
-      // Capitalizar correctamente (primera letra mayúscula del instrumento)
-      _labels = labelsList
-          .map((label) => _capitalizeLabel(label.trim()))
-          .toList();
-      
-      _logger.i('✅ Etiquetas cargadas desde archivo: ${_labels.length}');
+
+      // Convierte el formato técnico del archivo en nombres legibles.
+      _labels =
+          labelsList.map((label) => _capitalizeLabel(label.trim())).toList();
+
+      _logger.i('Etiquetas cargadas desde archivo: ${_labels.length}');
       for (int i = 0; i < _labels.length; i++) {
         _logger.d('  [$i] ${_labels[i]}');
       }
     } catch (e) {
-      _logger.w('⚠️  No se pudieron cargar etiquetas desde archivo: $e');
+      _logger.w('No se pudieron cargar etiquetas desde archivo: $e');
       _logger.i('Usando etiquetas por defecto');
       _labels = _defaultLabels;
     }
   }
 
-  /// Capitaliza correctamente los nombres de instrumentos
-  /// Convierte "vasos_precipitado" → "Vasos de precipitado"
+  /// Convierte una etiqueta técnica a estilo oración para mostrarla al usuario.
+  ///
+  /// Por ejemplo, transforma `vasos_precipitado` en `Vasos de precipitado`.
+  /// Devuelve una cadena vacía si la etiqueta solo contiene espacios.
   String _capitalizeLabel(String label) {
-    return label
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map((word) => word.isNotEmpty 
-            ? word[0].toUpperCase() + word.substring(1).toLowerCase()
-            : word)
-        .join(' ');
+    final normalized = label.replaceAll('_', ' ').trim().toLowerCase();
+    if (normalized.isEmpty) return normalized;
+    return normalized[0].toUpperCase() + normalized.substring(1);
   }
 
-  /// Realiza predicción en una imagen usando el modelo de IA
-  /// Este es el método principal que ejecuta la clasificación
-  /// Recibe bytes de imagen y devuelve lista de predicciones ordenadas por confianza
+  /// Clasifica una imagen y devuelve todas las predicciones por confianza.
+  ///
+  /// Requiere haber completado [initialize]. Preprocesa los bytes, ejecuta una
+  /// inferencia de lote único y convierte la salida en [PredictionResult]. Los
+  /// errores se registran y se propagan para que la interfaz decida cómo actuar.
   Future<List<PredictionResult>> predict(Uint8List imageBytes) async {
-    // Validación: asegurar que el servicio esté inicializado
+    // Evita acceder a un intérprete inexistente o cerrado.
     if (!_isInitialized || _interpreter == null) {
       throw Exception('TFLite no está inicializado');
     }
 
     try {
-      _logger.i('🔍 Iniciando predicción...');
-      _logger.i('   📊 Tamaño de imagen: ${imageBytes.length} bytes');
-      _logger.i('   🏷️  Clases disponibles: ${_labels.length}');
+      _logger.i('Iniciando predicción');
+      _logger.i('Tamaño de imagen: ${imageBytes.length} bytes');
+      _logger.i('Clases disponibles: ${_labels.length}');
 
-      // Paso 1: Preprocesar la imagen para el modelo
-      // Convierte la imagen al formato esperado por la red neuronal
-      _logger.i('   ⚙️  Preprocesando imagen...');
-      final input = _prepareInput(imageBytes);
+      // 1. Convertir la imagen al tensor RGB normalizado que espera la red.
+      _logger.i('Preprocesando imagen');
+      final input = _preprocessor.preprocess(imageBytes);
 
-      // Paso 2: Preparar el buffer de salida
-      // El modelo devuelve un vector de probabilidades (una por clase)
-      // Creamos un array 2D: [1][número_de_clases]
+      // 2. Reservar un vector de salida por cada clase para un lote de una imagen.
       var output = List<List<double>>.generate(
-        1, // batch size = 1 (una imagen a la vez)
-        (index) => List<double>.filled(_labels.length, 0.0), // vector de probabilidades
+        1, // Tamaño de lote: una imagen a la vez.
+        (index) => List<double>.filled(
+            _labels.length, 0.0), // Una puntuación por etiqueta.
       );
 
-      // Paso 3: Ejecutar la inferencia
-      // El modelo procesa la imagen y llena el vector output con probabilidades
-      _logger.i('   🧠 Ejecutando modelo...');
+      // 3. Ejecutar la inferencia; el intérprete escribe sobre `output`.
+      _logger.i('Ejecutando modelo');
       _interpreter!.run(input, output);
 
-      // Paso 4: Procesar los resultados crudos
-      // Convertir probabilidades en objetos PredictionResult ordenados
-      _logger.i('   📈 Procesando resultados...');
+      // 4. Normalizar y ordenar las puntuaciones producidas por el modelo.
+      _logger.i('Procesando resultados');
       final predictions = _processOutput(output[0]);
 
-      _logger.i('✅ Predicción completada exitosamente');
+      _logger.i('Predicción completada exitosamente');
 
       return predictions;
     } catch (e, stackTrace) {
-      _logger.e('❌ Error en predicción: $e');
+      _logger.e('Error en predicción: $e');
       _logger.e('Stack trace: $stackTrace');
-      rethrow; // Re-lanzar para que el caller maneje el error
+      rethrow; // La capa que inició el análisis decide el mensaje al usuario.
     }
   }
 
-  /// Prepara la imagen para el modelo de IA
-  /// Convierte la imagen al formato esperado por la red neuronal
-  /// El modelo espera: [1, 224, 224, 3] (batch, height, width, channels)
-  List<List<List<List<double>>>> _prepareInput(Uint8List imageBytes) {
-    try {
-      // Decodificar la imagen desde bytes a objeto Image
-      img.Image? image = img.decodeImage(imageBytes);
-      if (image == null) {
-        throw Exception('No se pudo decodificar la imagen');
-      }
-
-      _logger.d('Imagen original: ${image.width}x${image.height}');
-
-      // Paso 1: Mejorar el redimensionamiento manteniendo aspect ratio
-      // Calcular el tamaño manteniendo proporciones
-      final aspectRatio = image.width / image.height;
-      int targetWidth = 224;
-      int targetHeight = 224;
-
-      if (aspectRatio > 1) {
-        // Imagen más ancha que alta
-        targetHeight = (224 / aspectRatio).round();
-      } else {
-        // Imagen más alta que ancha
-        targetWidth = (224 * aspectRatio).round();
-      }
-
-      // Redimensionar manteniendo proporciones
-      img.Image resizedImage = img.copyResize(
-        image,
-        width: targetWidth,
-        height: targetHeight,
-        interpolation: img.Interpolation.cubic, // Mejor interpolación
-      );
-
-      // Crear canvas de 224x224 y centrar la imagen
-      img.Image canvas = img.Image(width: 224, height: 224);
-      img.fill(canvas, color: img.ColorRgb8(128, 128, 128)); // Fondo gris
-
-      // Calcular posición para centrar
-      final x = ((224 - targetWidth) / 2).round();
-      final y = ((224 - targetHeight) / 2).round();
-
-      // Copiar imagen redimensionada al centro del canvas
-      img.compositeImage(canvas, resizedImage, dstX: x, dstY: y);
-
-      _logger.d('Imagen procesada: ${canvas.width}x${canvas.height}');
-
-      // Paso 2: Convertir a RGB si es necesario
-      if (canvas.numChannels < 3) {
-        canvas = img.Image.from(canvas);
-      }
-
-      // Paso 3: Normalización correcta para MobileNetV2
-      // MobileNetV2 espera valores entre -1 y 1, no 0-1
-      final input = List<List<List<List<double>>>>.generate(
-        1, // batch size = 1
-        (b) => List<List<List<double>>>.generate(
-          224, // height
-          (h) => List<List<double>>.generate(
-            224, // width
-            (w) {
-              final pixel = canvas.getPixelSafe(w, h);
-
-              // Normalización MobileNetV2: (pixel/127.5) - 1
-              // Esto convierte 0-255 a -1 a 1
-              return [
-                (pixel.r / 127.5) - 1.0,  // Canal Rojo
-                (pixel.g / 127.5) - 1.0,  // Canal Verde
-                (pixel.b / 127.5) - 1.0,  // Canal Azul
-              ];
-            },
-          ),
-        ),
-      );
-
-      _logger.d('Tensor preparado con normalización MobileNetV2');
-
-      return input;
-    } catch (e) {
-      _logger.e('Error preparando input: $e');
-      rethrow;
-    }
-  }
-
-  /// Procesa la salida cruda del modelo y la convierte en predicciones útiles
-  /// El modelo devuelve un vector de probabilidades, una por cada clase
-  /// Esta función valida que sea correcto y lo convierte en objetos PredictionResult
+  /// Convierte la salida cruda del modelo en predicciones utilizables.
+  ///
+  /// Acepta probabilidades ya normalizadas o puntuaciones libres. En el segundo
+  /// caso aplica softmax, limita cada confianza al intervalo válido y ordena de
+  /// mayor a menor. Lanza una excepción si el vector está vacío.
   List<PredictionResult> _processOutput(List<double> output) {
     try {
       final results = <PredictionResult>[];
 
-      // Log detallado del output bruto para debugging
+      // Una muestra corta permite diagnosticar el modelo sin saturar el registro.
       _logger.d('Output bruto del modelo (primeros 5 valores):');
       for (int i = 0; i < output.length && i < 5; i++) {
         _logger.d('  [$i] ${output[i]}');
       }
 
-      // Validar que tengamos valores válidos
       if (output.isEmpty) {
         throw Exception('Output del modelo está vacío');
       }
 
-      // Calcular suma para verificar normalización
+      // La suma y el rango revelan si la salida ya representa probabilidades.
       final sum = output.fold<double>(0.0, (a, b) => a + b.abs());
       _logger.d('Suma de valores de confianza: $sum');
 
-      // Si la suma es muy pequeña (<0.1), probablemente necesita softmax
-      bool needsSoftmax = sum < 0.1;
+      final probabilitySum = output.fold<double>(0.0, (a, b) => a + b);
+      final hasValuesOutsideProbabilityRange =
+          output.any((value) => value < 0 || value > 1);
+      final needsSoftmax = hasValuesOutsideProbabilityRange ||
+          (probabilitySum - 1.0).abs() > 0.01;
       if (needsSoftmax) {
-        _logger.w('⚠️  Output parece no normalizado. Aplicando softmax...');
+        _logger.w('Output no normalizado. Aplicando softmax...');
       }
 
-      // Paso 1: Aplicar softmax si es necesario
-      // Softmax convierte cualquier vector a probabilidades que suman 1
+      // Softmax convierte puntuaciones libres en probabilidades que suman uno.
       final normalized = needsSoftmax ? _applySoftmax(output) : output;
 
-      // Paso 2: Convertir cada valor en un objeto PredictionResult
+      // Solo se crean resultados con una etiqueta correspondiente.
       for (int i = 0; i < normalized.length && i < _labels.length; i++) {
         results.add(PredictionResult(
-          label: _labels[i],                         // Nombre de la clase
-          confidence: normalized[i].clamp(0.0, 1.0), // Probabilidad entre 0-1
-          index: i,                                  // Índice de la clase
+          label: _labels[i],
+          confidence: normalized[i].clamp(0.0, 1.0),
+          index: i,
         ));
       }
 
-      // Paso 3: Ordenar por confianza descendente
+      // Este orden permite que `take(topN)` seleccione luego los mejores datos.
       results.sort((a, b) => b.confidence.compareTo(a.confidence));
 
-      // Log con mejor formato
+      // Tabla textual de diagnóstico; no se muestra en la interfaz.
       _logger.i('═══════════════════════════════════════');
       _logger.i('PREDICCIONES (ordenadas por confianza):');
       _logger.i('═══════════════════════════════════════');
@@ -328,22 +314,22 @@ class TFLiteService {
     }
   }
 
-  /// Aplica la función softmax a un vector de números
-  /// Softmax: e^x / sum(e^x) - convierte a probabilidades que suman 1
+  /// Aplica softmax a un vector para obtener probabilidades que suman uno.
+  ///
+  /// Resta el valor máximo antes de exponenciar para evitar desbordamiento
+  /// numérico. Si algo falla, usa una normalización absoluta como respaldo.
   List<double> _applySoftmax(List<double> input) {
     try {
-      // Paso 1: Encontrar el máximo para estabilidad numérica
+      // Restar el máximo mantiene los exponentes en un intervalo estable.
       final maxVal = input.reduce((a, b) => a > b ? a : b);
 
-      // Paso 2: Calcular e^(x - max) y sumar
       final expValues = input.map((x) => math.exp(x - maxVal)).toList();
       final sum = expValues.fold<double>(0.0, (a, b) => a + b);
 
-      // Paso 3: Dividir cada valor por la suma
       return expValues.map((x) => x / sum).toList();
     } catch (e) {
       _logger.e('Error en softmax: $e');
-      // Si falla, devolver el input normalizado simple
+      // Respaldo que también garantiza valores no negativos.
       final sum = input.fold<double>(0.0, (a, b) => a + b.abs());
       if (sum > 0) {
         return input.map((x) => x.abs() / sum).toList();
@@ -352,35 +338,39 @@ class TFLiteService {
     }
   }
 
-  /// Filtra y obtiene las mejores N predicciones
-  /// Útil para mostrar solo las predicciones más relevantes al usuario
+  /// Filtra por confianza mínima y devuelve como máximo las primeras [topN].
+  /// Presupone que [predictions] ya está ordenada de mayor a menor confianza.
   List<PredictionResult> getTopPredictions(
     List<PredictionResult> predictions, {
-    int topN = 3,                    // Número máximo de predicciones a devolver
-    double confidenceThreshold = 0.0, // Umbral mínimo de confianza
+    int topN = 3, // Cantidad máxima de resultados.
+    double confidenceThreshold = 0.0, // Confianza mínima aceptada.
   }) {
     return predictions
-        .where((p) => p.confidence >= confidenceThreshold) // Filtrar por confianza
-        .take(topN)                                       // Tomar solo las primeras N
+        .where((p) => p.confidence >= confidenceThreshold)
+        .take(topN)
         .toList();
   }
 
-  /// Libera los recursos del modelo
-  /// IMPORTANTE: Llamar cuando la app se cierre para evitar memory leaks
+  /// Cierra el intérprete nativo y marca el servicio como no inicializado.
+  /// Debe llamarse al terminar su uso para evitar retener memoria del modelo.
   void dispose() {
-    _interpreter?.close();  // Cerrar el intérprete de TFLite
+    _interpreter?.close();
     _interpreter = null;
     _isInitialized = false;
     _logger.i('TFLite disposed - Recursos liberados');
   }
 }
 
-/// Modelo de datos para el resultado de una predicción individual
-/// Representa una clasificación con su nivel de confianza
+/// Resultado inmutable de una clase candidata producida por el modelo.
 class PredictionResult {
-  final String label;      // Nombre del instrumento identificado
-  final double confidence; // Probabilidad entre 0.0 y 1.0
-  final int index;         // Índice de la clase en el modelo
+  /// Nombre legible del instrumento identificado.
+  final String label;
+
+  /// Probabilidad normalizada entre `0.0` y `1.0`.
+  final double confidence;
+
+  /// Posición de esta clase en el vector de salida del modelo.
+  final int index;
 
   const PredictionResult({
     required this.label,
@@ -388,21 +378,14 @@ class PredictionResult {
     required this.index,
   });
 
-  /// Confianza como porcentaje (0-100)
+  /// Confianza truncada como porcentaje entero entre 0 y 100.
   int get confidencePercentage => (confidence * 100).toInt();
 
-  /// Nivel de confianza
+  /// Clasificación cualitativa usada por la interfaz.
   String get confidenceLevel {
     if (confidence >= 0.8) return 'Alta';
     if (confidence >= 0.5) return 'Media';
     return 'Baja';
-  }
-
-  /// Emoji de confianza
-  String get confidenceEmoji {
-    if (confidence >= 0.8) return '✅';
-    if (confidence >= 0.5) return '⚠️';
-    return '❌';
   }
 
   @override
@@ -411,8 +394,9 @@ class PredictionResult {
   }
 }
 
-/// Excepciones personalizadas
+/// Excepción de dominio para comunicar fallos propios de TensorFlow Lite.
 class TFLiteException implements Exception {
+  /// Descripción legible del fallo.
   final String message;
   TFLiteException(this.message);
 

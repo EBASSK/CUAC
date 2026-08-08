@@ -1,0 +1,4 @@
+storePassword=REEMPLAZAR
+keyPassword=REEMPLAZAR
+keyAlias=cuac-upload
+storeFile=cuac-upload-keystore.jks

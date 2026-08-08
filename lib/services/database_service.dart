@@ -2,8 +2,14 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/scan_history.dart';
 import '../models/prediction.dart';
+import '../config/app_config.dart';
 import 'dart:convert';
 
+/// Administra la persistencia local del historial mediante SQLite.
+///
+/// Es una instancia única con apertura diferida: la base se crea o abre cuando
+/// alguna operación solicita [database]. No realiza sincronización en red;
+/// todos los datos permanecen en el almacenamiento de la aplicación.
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
   static Database? _database;
@@ -14,24 +20,27 @@ class DatabaseService {
 
   DatabaseService._internal();
 
+  /// Devuelve la conexión compartida y la inicializa en el primer acceso.
   Future<Database> get database async {
     _database ??= await _initDatabase();
     return _database!;
   }
 
+  /// Resuelve una ruta privada del sistema y abre la versión configurada.
   Future<Database> _initDatabase() async {
     final databasePath = await getDatabasesPath();
-    final path = join(databasePath, 'lab_instruments.db');
+    final path = join(databasePath, AppConfig.databaseName);
 
     return openDatabase(
       path,
-      version: 1,
+      version: AppConfig.databaseVersion,
       onCreate: _createTables,
     );
   }
 
+  /// Crea el esquema inicial y los índices utilizados por las consultas.
   Future<void> _createTables(Database db, int version) async {
-    // Tabla: scan_history
+    // Historial de capturas, resultados y metadatos opcionales del usuario.
     await db.execute('''
       CREATE TABLE IF NOT EXISTS scan_history (
         id TEXT PRIMARY KEY,
@@ -46,7 +55,7 @@ class DatabaseService {
       )
     ''');
 
-    // Tabla: instruments (referencia)
+    // Catálogo de referencia previsto para información de instrumentos.
     await db.execute('''
       CREATE TABLE IF NOT EXISTS instruments (
         id INTEGER PRIMARY KEY,
@@ -60,7 +69,7 @@ class DatabaseService {
       )
     ''');
 
-    // Índices para búsquedas rápidas
+    // Índices de los filtros y ordenamientos usados con mayor frecuencia.
     await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_timestamp ON scan_history(timestamp DESC)');
     await db.execute(
@@ -69,12 +78,15 @@ class DatabaseService {
         'CREATE INDEX IF NOT EXISTS idx_favorite ON scan_history(is_favorite)');
   }
 
-  // ========== CRUD OPERATIONS ==========
+  // Operaciones de historial
 
-  /// Insertar nuevo escaneo
+  /// Inserta un escaneo y devuelve su identificador.
+  ///
+  /// Las tres mejores predicciones se serializan como JSON dentro de una sola
+  /// columna. Si ya existe el mismo ID, SQLite reemplaza el registro completo.
   Future<String> insertScan(ScanHistory scan) async {
     final db = await database;
-    
+
     final top3Json = jsonEncode(
       scan.top3Predictions.map((p) => p.toJson()).toList(),
     );
@@ -98,7 +110,7 @@ class DatabaseService {
     return scan.id;
   }
 
-  /// Obtener todos los escaneos
+  /// Obtiene todos los escaneos, del más reciente al más antiguo.
   Future<List<ScanHistory>> getAllScans() async {
     final db = await database;
     final result = await db.query(
@@ -109,7 +121,7 @@ class DatabaseService {
     return result.map((map) => _mapToScanHistory(map)).toList();
   }
 
-  /// Obtener escaneo por ID
+  /// Busca un escaneo por ID o devuelve `null` si no existe.
   Future<ScanHistory?> getScanById(String id) async {
     final db = await database;
     final result = await db.query(
@@ -122,7 +134,7 @@ class DatabaseService {
     return _mapToScanHistory(result.first);
   }
 
-  /// Obtener escaneos de un instrumento específico
+  /// Filtra el historial por el nombre exacto de un instrumento.
   Future<List<ScanHistory>> getScansByInstrument(String instrument) async {
     final db = await database;
     final result = await db.query(
@@ -135,7 +147,7 @@ class DatabaseService {
     return result.map((map) => _mapToScanHistory(map)).toList();
   }
 
-  /// Obtener escaneos favoritos
+  /// Obtiene únicamente los escaneos marcados como favoritos.
   Future<List<ScanHistory>> getFavoritesScans() async {
     final db = await database;
     final result = await db.query(
@@ -147,7 +159,7 @@ class DatabaseService {
     return result.map((map) => _mapToScanHistory(map)).toList();
   }
 
-  /// Obtener escaneos en rango de fechas
+  /// Obtiene escaneos dentro de un rango ISO-8601, incluidos sus extremos.
   Future<List<ScanHistory>> getScansByDateRange(
     DateTime startDate,
     DateTime endDate,
@@ -163,7 +175,7 @@ class DatabaseService {
     return result.map((map) => _mapToScanHistory(map)).toList();
   }
 
-  /// Actualizar escaneo
+  /// Actualiza los campos editables y devuelve la cantidad de filas afectadas.
   Future<int> updateScan(ScanHistory scan) async {
     final db = await database;
 
@@ -184,10 +196,10 @@ class DatabaseService {
     );
   }
 
-  /// Toggle favorito
+  /// Invierte el estado favorito; devuelve `0` cuando el ID no existe.
   Future<int> toggleFavorite(String id) async {
     final db = await database;
-    
+
     final scan = await getScanById(id);
     if (scan == null) return 0;
 
@@ -199,7 +211,7 @@ class DatabaseService {
     );
   }
 
-  /// Eliminar escaneo
+  /// Elimina un escaneo por ID y devuelve la cantidad de filas afectadas.
   Future<int> deleteScan(String id) async {
     final db = await database;
     return await db.delete(
@@ -209,42 +221,42 @@ class DatabaseService {
     );
   }
 
-  /// Limpiar historial completo
+  /// Elimina todos los registros del historial sin borrar su tabla.
   Future<void> clearHistory() async {
     final db = await database;
     await db.delete('scan_history');
   }
 
-  // ========== STATISTICS ==========
+  // Consultas estadísticas
 
-  /// Contar total de escaneos
+  /// Cuenta el total de escaneos guardados.
   Future<int> getScanCount() async {
     final db = await database;
-    final result = await db.rawQuery('SELECT COUNT(*) as count FROM scan_history');
+    final result =
+        await db.rawQuery('SELECT COUNT(*) as count FROM scan_history');
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  /// Obtener estadísticas generales
+  /// Resume cantidad, variedad, confianza promedio y fechas del historial.
+  ///
+  /// Las claves del mapa son estables porque las consume la capa de interfaz.
+  /// Las fechas serán nulas mientras el historial esté vacío.
   Future<Map<String, dynamic>> getStatistics() async {
     final db = await database;
-    
+
     final totalCount = await getScanCount();
-    
+
     final uniqueInstruments = await db.rawQuery(
-      'SELECT COUNT(DISTINCT predicted_instrument) as count FROM scan_history'
-    );
-    
-    final avgConfidence = await db.rawQuery(
-      'SELECT AVG(confidence) as avg FROM scan_history'
-    );
+        'SELECT COUNT(DISTINCT predicted_instrument) as count FROM scan_history');
 
-    final firstScan = await db.rawQuery(
-      'SELECT MIN(timestamp) as first FROM scan_history'
-    );
+    final avgConfidence =
+        await db.rawQuery('SELECT AVG(confidence) as avg FROM scan_history');
 
-    final lastScan = await db.rawQuery(
-      'SELECT MAX(timestamp) as last FROM scan_history'
-    );
+    final firstScan =
+        await db.rawQuery('SELECT MIN(timestamp) as first FROM scan_history');
+
+    final lastScan =
+        await db.rawQuery('SELECT MAX(timestamp) as last FROM scan_history');
 
     return {
       'total_scans': totalCount,
@@ -255,12 +267,11 @@ class DatabaseService {
     };
   }
 
-  /// Obtener escaneos por instrumento (para gráficos)
+  /// Agrupa la cantidad de escaneos por instrumento para gráficos.
   Future<Map<String, int>> getScanCountByInstrument() async {
     final db = await database;
     final result = await db.rawQuery(
-      'SELECT predicted_instrument, COUNT(*) as count FROM scan_history GROUP BY predicted_instrument ORDER BY count DESC'
-    );
+        'SELECT predicted_instrument, COUNT(*) as count FROM scan_history GROUP BY predicted_instrument ORDER BY count DESC');
 
     final map = <String, int>{};
     for (var row in result) {
@@ -269,61 +280,76 @@ class DatabaseService {
     return map;
   }
 
-  /// Obtener promedio de confianza por instrumento
+  /// Calcula la confianza promedio de cada instrumento identificado.
   Future<Map<String, double>> getAverageConfidenceByInstrument() async {
     final db = await database;
     final result = await db.rawQuery(
-      'SELECT predicted_instrument, AVG(confidence) as avg_confidence FROM scan_history GROUP BY predicted_instrument'
-    );
+        'SELECT predicted_instrument, AVG(confidence) as avg_confidence FROM scan_history GROUP BY predicted_instrument');
 
     final map = <String, double>{};
     for (var row in result) {
-      map[row['predicted_instrument'] as String] = 
+      map[row['predicted_instrument'] as String] =
           (row['avg_confidence'] as double?) ?? 0.0;
     }
     return map;
   }
 
-  // ========== EXPORT ==========
+  // Exportación
 
-  /// Exportar historial a JSON
+  /// Exporta una versión resumida del historial como una cadena JSON.
   Future<String> exportHistoryAsJson() async {
     final scans = await getAllScans();
-    final jsonList = scans.map((s) => {
-      'id': s.id,
-      'timestamp': s.timestamp.toIso8601String(),
-      'instrument': s.predictedInstrument,
-      'confidence': s.confidence,
-      'notes': s.userNotes,
-      'favorite': s.isFavorite,
-    }).toList();
+    final jsonList = scans
+        .map((s) => {
+              'id': s.id,
+              'timestamp': s.timestamp.toIso8601String(),
+              'instrument': s.predictedInstrument,
+              'confidence': s.confidence,
+              'notes': s.userNotes,
+              'favorite': s.isFavorite,
+            })
+        .toList();
 
     return jsonEncode(jsonList);
   }
 
-  /// Exportar historial a CSV
+  /// Exporta una versión resumida del historial en formato CSV.
+  ///
+  /// Cada campo se escapa cuando contiene comas, comillas o saltos de línea,
+  /// para conservar un archivo válido al abrirlo en una hoja de cálculo.
   Future<String> exportHistoryAsCSV() async {
     final scans = await getAllScans();
-    
+
     final csv = StringBuffer();
     csv.writeln('ID,Timestamp,Instrument,Confidence,Notes,Favorite');
-    
+
     for (var scan in scans) {
       csv.writeln(
-        '${scan.id},'
-        '${scan.timestamp.toIso8601String()},'
-        '${scan.predictedInstrument},'
-        '${scan.confidence},'
-        '${scan.userNotes ?? ''},'
-        '${scan.isFavorite ? 'Yes' : 'No'}',
+        [
+          scan.id,
+          scan.timestamp.toIso8601String(),
+          scan.predictedInstrument,
+          scan.confidence,
+          scan.userNotes ?? '',
+          scan.isFavorite ? 'Yes' : 'No',
+        ].map(_escapeCsvValue).join(','),
       );
     }
-    
+
     return csv.toString();
   }
 
-  // ========== HELPERS ==========
+  /// Aplica las reglas de escape de CSV: duplica comillas y encierra el campo.
+  String _escapeCsvValue(Object value) {
+    final text = value.toString();
+    if (!text.contains(RegExp(r'[,"\r\n]'))) return text;
+    return '"${text.replaceAll('"', '""')}"';
+  }
 
+  // Conversión entre filas SQLite y modelos de dominio
+
+  /// Reconstruye un [ScanHistory] y tolera JSON antiguo o dañado en el top 3.
+  /// En ese caso conserva el escaneo y usa una lista de predicciones vacía.
   ScanHistory _mapToScanHistory(Map<String, dynamic> map) {
     final top3Json = map['top_3_predictions'] as String?;
     List<Prediction> predictions = [];
@@ -352,9 +378,11 @@ class DatabaseService {
     );
   }
 
-  /// Cerrar base de datos
+  /// Cierra la conexión compartida y permite volver a abrirla más adelante.
   Future<void> close() async {
-    final db = await database;
+    final db = _database;
+    if (db == null) return;
     await db.close();
+    _database = null;
   }
 }

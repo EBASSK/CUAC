@@ -1,14 +1,25 @@
-// Niveles de confianza para clasificar la precisión de las predicciones
+/// Rangos semánticos usados por la interfaz para interpretar una confianza.
 enum ConfidenceLevel { high, medium, low }
 
-// Modelo de datos principal para representar una predicción de instrumento
-// Esta clase se usa tanto para resultados de IA como para almacenamiento en BD
+/// Resultado individual producido por el modelo de reconocimiento.
+///
+/// Además de alimentar la pantalla de resultados, sus instancias se serializan
+/// dentro de cada registro del historial para conservar las mejores opciones.
 class Prediction {
-  final String name;        // Nombre del instrumento identificado (ej: "Microscopio")
-  final double confidence;  // Nivel de confianza entre 0.0 y 1.0
-  final String category;    // Categoría del instrumento (ej: "Óptica", "Medición")
-  final String? description; // Descripción opcional del instrumento
-  final String? imageUrl;   // URL de imagen de referencia (opcional)
+  /// Etiqueta legible del instrumento, por ejemplo, «Microscopio».
+  final String name;
+
+  /// Probabilidad normalizada entre 0.0 y 1.0 devuelta por el modelo.
+  final double confidence;
+
+  /// Agrupación funcional del instrumento, como «Óptica» o «Medición».
+  final String category;
+
+  /// Explicación opcional que puede complementar el resultado.
+  final String? description;
+
+  /// Referencia opcional a una imagen ilustrativa del instrumento.
+  final String? imageUrl;
 
   const Prediction({
     required this.name,
@@ -18,36 +29,43 @@ class Prediction {
     this.imageUrl,
   });
 
-  /// Convierte la confianza a porcentaje para mostrar al usuario
-  /// Ejemplo: 0.85 → 85
+  /// Convierte la confianza normalizada a un porcentaje entero para la interfaz.
+  ///
+  /// Por ejemplo, un valor de `0.85` se presenta como `85`.
   int getConfidencePercent() {
     return (confidence * 100).toInt();
   }
 
-  /// Determina el nivel de confianza basado en umbrales predefinidos
-  /// Se usa para mostrar colores y emojis diferentes en la UI
+  /// Traduce el valor numérico a un nivel de confianza comprensible.
+  ///
+  /// Los umbrales mantienen consistente el mensaje visual en todas las pantallas.
   ConfidenceLevel getConfidenceLevel() {
-    if (confidence >= 0.8) return ConfidenceLevel.high;    // Verde - muy confiable
-    if (confidence >= 0.5) return ConfidenceLevel.medium;  // Naranja - moderadamente confiable
-    return ConfidenceLevel.low;                            // Rojo - poco confiable
+    if (confidence >= 0.8) {
+      return ConfidenceLevel.high;
+    }
+    if (confidence >= 0.5) {
+      return ConfidenceLevel.medium;
+    }
+    return ConfidenceLevel.low;
   }
 
-  /// Devuelve un color basado en el nivel de confianza
-  /// Se usa para indicadores visuales en la interfaz
+  /// Devuelve el color hexadecimal asociado al nivel de confianza.
+  ///
+  /// Se entrega como texto porque el modelo no depende de clases visuales de
+  /// Flutter y así también puede serializarse o reutilizarse fuera de widgets.
   String getConfidenceColor() {
     final level = getConfidenceLevel();
     switch (level) {
       case ConfidenceLevel.high:
-        return '#10B981'; // Verde - éxito
+        return '#10B981'; // Verde: confianza alta.
       case ConfidenceLevel.medium:
-        return '#F59E0B'; // Naranja - advertencia
+        return '#F59E0B'; // Naranja: resultado que conviene revisar.
       case ConfidenceLevel.low:
-        return '#EF4444'; // Rojo - error
+        return '#EF4444'; // Rojo: confianza insuficiente.
     }
   }
 
-  /// Serializa el objeto a JSON para almacenamiento en base de datos
-  /// Convierte el objeto Dart en un Map que puede ser convertido a JSON
+  /// Convierte la predicción a un mapa apto para JSON y persistencia local.
   Map<String, dynamic> toJson() {
     return {
       'name': name,
@@ -58,8 +76,7 @@ class Prediction {
     };
   }
 
-  /// Crea un objeto Prediction desde JSON
-  /// Deserializa datos de la base de datos de vuelta a objeto Dart
+  /// Reconstruye una predicción a partir de datos JSON almacenados.
   factory Prediction.fromJson(Map<String, dynamic> json) {
     return Prediction(
       name: json['name'] as String,

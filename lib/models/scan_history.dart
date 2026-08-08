@@ -3,16 +3,37 @@ import 'prediction.dart';
 
 part 'scan_history.g.dart';
 
+/// Registro persistente de una identificación realizada por el usuario.
+///
+/// La anotación genera los adaptadores [fromJson] y [toJson] en el archivo
+/// `scan_history.g.dart`; ese archivo es código generado y no debe editarse.
 @JsonSerializable()
 class ScanHistory {
+  /// Identificador único del registro dentro de la base de datos.
   final String id;
+
+  /// Instante en que se confirmó y guardó la identificación.
   final DateTime timestamp;
+
+  /// Ruta local de la copia permanente de la fotografía.
   final String imagePath;
+
+  /// Nombre de la predicción con mayor confianza.
   final String predictedInstrument;
+
+  /// Confianza normalizada de la predicción principal.
   final double confidence;
+
+  /// Hasta tres predicciones ordenadas, incluida la predicción principal.
   final List<Prediction> top3Predictions;
+
+  /// Nota libre agregada por el usuario al guardar el resultado.
   final String? userNotes;
+
+  /// Ubicación opcional asociada al registro; actualmente puede quedar vacía.
   final String? location;
+
+  /// Indica si el registro aparece en el filtro de favoritos.
   final bool isFavorite;
 
   ScanHistory({
@@ -27,12 +48,15 @@ class ScanHistory {
     this.isFavorite = false,
   });
 
-  /// Convierte confianza a porcentaje
+  /// Convierte la confianza normalizada a un porcentaje entero.
   int getConfidencePercent() {
     return (confidence * 100).toInt();
   }
 
-  /// Formatea fecha de forma legible
+  /// Presenta la fecha como tiempo relativo reciente o como fecha calendario.
+  ///
+  /// Esta conversión se calcula al consultarla para mantener actualizado el
+  /// texto «Hace…» aunque el objeto permanezca cargado en memoria.
   String getFormattedDate() {
     final now = DateTime.now();
     final difference = now.difference(timestamp);
@@ -52,11 +76,17 @@ class ScanHistory {
     }
   }
 
+  /// Acceso abreviado usado por widgets y plantillas de presentación.
   String get formattedDate => getFormattedDate();
 
+  /// Acceso abreviado al porcentaje de confianza ya convertido.
   int get confidencePercentage => getConfidencePercent();
 
-  /// Crea copia con cambios
+  /// Crea una nueva instancia reemplazando únicamente los campos indicados.
+  ///
+  /// Este patrón mantiene el modelo inmutable al marcar favoritos o editar datos.
+  /// En los campos anulables [userNotes] y [location], pasar `null` conserva el
+  /// valor anterior; este método no permite reemplazarlos explícitamente por null.
   ScanHistory copyWith({
     String? id,
     DateTime? timestamp,
@@ -81,7 +111,10 @@ class ScanHistory {
     );
   }
 
+  /// Reconstruye un registro desde el mapa producido por la capa de datos.
   factory ScanHistory.fromJson(Map<String, dynamic> json) =>
       _$ScanHistoryFromJson(json);
+
+  /// Convierte el registro a un mapa listo para serializar o almacenar.
   Map<String, dynamic> toJson() => _$ScanHistoryToJson(this);
 }

@@ -1,175 +1,285 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../config/app_config.dart';
-import '../config/theme.dart';
+import '../providers/providers.dart';
 
-class SettingsScreen extends ConsumerStatefulWidget {
-  const SettingsScreen({Key? key}) : super(key: key);
+/// Centro de información y configuración de CUAC.
+///
+/// Organiza en tarjetas la información del modelo, permisos, privacidad,
+/// detalles técnicos y licencias. No mantiene estado propio: los datos se leen
+/// de servicios de Riverpod únicamente cuando el usuario abre cada opción.
+class SettingsScreen extends ConsumerWidget {
+  const SettingsScreen({super.key});
+
+  // Paleta local de la pantalla. Los colores constantes garantizan contraste
+  // uniforme tanto en tarjetas como en diálogos y hojas inferiores.
+  static const _background = Color(0xFF060A13);
+  static const _panel = Color(0xFF131A29);
+  static const _iconBackground = Color(0xFF1D2739);
+  static const _border = Color(0xFF263145);
+  static const _accent = Color(0xFFA7A5FF);
+  static const _primaryText = Color(0xFFF5F7FB);
+  static const _secondaryText = Color(0xFF858EA1);
 
   @override
-  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
-}
-
-class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _notificationsEnabled = true;
-  bool _autoSaveEnabled = true;
-  String _language = 'es';
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Configuración'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Mantiene las barras del sistema integradas con el fondo oscuro.
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: _background,
+        statusBarIconBrightness: Brightness.light,
+        systemNavigationBarColor: _background,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: _background,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(context),
+              const Divider(
+                height: 1,
+                thickness: 1,
+                indent: 20,
+                endIndent: 20,
+                color: _border,
+              ),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 32),
+                  children: [
+                    _SettingsCard(
+                      icon: Icons.psychology_outlined,
+                      title: 'Reconocimiento',
+                      subtitle: 'Modelo local, versión y clases',
+                      onTap: () => _showModelInfo(context, ref),
+                    ),
+                    _SettingsCard(
+                      icon: Icons.photo_camera_outlined,
+                      title: 'Cámara y permisos',
+                      subtitle: 'Acceso a la cámara del dispositivo',
+                      onTap: () => _showCameraPermissions(context, ref),
+                    ),
+                    _SettingsCard(
+                      icon: Icons.inventory_2_outlined,
+                      title: 'Datos y privacidad',
+                      subtitle: 'Escaneos almacenados únicamente en tu equipo',
+                      onTap: () => _showPrivacyDialog(context),
+                    ),
+                    _SettingsCard(
+                      icon: Icons.memory_outlined,
+                      title: 'Información técnica',
+                      subtitle: 'Aplicación, modelo y almacenamiento',
+                      onTap: () => _showTechnicalInfo(context),
+                    ),
+                    _SettingsCard(
+                      icon: Icons.gavel_outlined,
+                      title: 'Términos y licencias',
+                      subtitle: 'Uso responsable y software de terceros',
+                      onTap: () => _showLegalOptions(context),
+                    ),
+                    _SettingsCard(
+                      icon: Icons.info_outline,
+                      title: 'Acerca de CUAC',
+                      subtitle: 'Versión ${AppConfig.appVersion} · SENA',
+                      onTap: () => _showAboutDialog(context),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
-      body: SingleChildScrollView(
+    );
+  }
+
+  /// Encabezado que vuelve a la ruta anterior o usa cámara como respaldo.
+  Widget _buildHeader(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 8, 20, 18),
+      child: Row(
+        children: [
+          IconButton(
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go('/camera');
+              }
+            },
+            tooltip: 'Volver',
+            icon: const Icon(Icons.arrow_back, color: _primaryText),
+          ),
+          const SizedBox(width: 4),
+          const Text(
+            'Ajustes',
+            style: TextStyle(
+              color: _primaryText,
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Combina la configuración declarada con las etiquetas disponibles del modelo.
+  Future<void> _showModelInfo(BuildContext context, WidgetRef ref) {
+    final labelCount = ref.read(tfliteServiceProvider).labels.length;
+
+    return _showInfoDialog(
+      context,
+      title: 'Modelo de reconocimiento',
+      icon: Icons.psychology_outlined,
+      children: [
+        _InfoRow(label: 'Versión', value: AppConfig.modelVersion),
+        _InfoRow(
+          label: 'Entrada',
+          value: '${AppConfig.modelInputSize} × ${AppConfig.modelInputSize} px',
+        ),
+        _InfoRow(
+          label: 'Clases disponibles',
+          value:
+              labelCount == 0 ? '10 instrumentos' : '$labelCount instrumentos',
+        ),
+        const _InfoRow(label: 'Procesamiento', value: 'Local, sin conexión'),
+      ],
+    );
+  }
+
+  /// Explica el uso de cámara y ofrece abrir la configuración del dispositivo.
+  Future<void> _showCameraPermissions(
+    BuildContext context,
+    WidgetRef ref,
+  ) {
+    return showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: _panel,
+        icon: const Icon(
+          Icons.photo_camera_outlined,
+          color: _accent,
+          size: 32,
+        ),
+        title: const Text(
+          'Cámara y permisos',
+          style: TextStyle(color: _primaryText),
+        ),
+        content: const Text(
+          'CUAC utiliza la cámara únicamente para capturar el instrumento que '
+          'quieres identificar. Puedes revisar o cambiar el permiso desde los '
+          'ajustes del dispositivo.',
+          style: TextStyle(color: _secondaryText, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              // Se cierra primero el diálogo para no mantener un contexto modal
+              // activo mientras Android o iOS abre su aplicación de ajustes.
+              Navigator.pop(dialogContext);
+              final opened =
+                  await ref.read(cameraServiceProvider).openSettings();
+              if (!context.mounted || opened) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('No se pudieron abrir los ajustes.'),
+                ),
+              );
+            },
+            child: const Text('Abrir ajustes'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Informa qué datos se guardan y confirma que el proceso es local.
+  Future<void> _showPrivacyDialog(BuildContext context) {
+    return _showInfoDialog(
+      context,
+      title: 'Datos y privacidad',
+      icon: Icons.shield_outlined,
+      children: const [
+        Text(
+          'Las imágenes, resultados, favoritos y notas se almacenan '
+          'únicamente en este dispositivo. El reconocimiento se ejecuta de '
+          'forma local y CUAC no envía tus capturas a servidores externos.',
+          style: TextStyle(color: _secondaryText, height: 1.55),
+        ),
+      ],
+    );
+  }
+
+  /// Resume las tecnologías y versiones útiles para diagnóstico.
+  Future<void> _showTechnicalInfo(BuildContext context) {
+    return _showInfoDialog(
+      context,
+      title: 'Información técnica',
+      icon: Icons.memory_outlined,
+      children: const [
+        _InfoRow(label: 'Aplicación', value: AppConfig.appVersion),
+        _InfoRow(label: 'Modelo', value: AppConfig.modelVersion),
+        _InfoRow(label: 'Motor', value: 'TensorFlow Lite'),
+        _InfoRow(label: 'Base de datos', value: 'SQLite local'),
+      ],
+    );
+  }
+
+  /// Agrupa términos propios y licencias de terceros en una hoja inferior.
+  Future<void> _showLegalOptions(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      useSafeArea: true,
+      backgroundColor: _panel,
+      showDragHandle: true,
+      builder: (sheetContext) => Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Sección: Preferencias
-            _buildSection(
-              context,
-              title: 'Preferencias',
-              children: [
-                _buildSwitchTile(
-                  context,
-                  title: 'Notificaciones',
-                  value: _notificationsEnabled,
-                  onChanged: (value) {
-                    setState(() => _notificationsEnabled = value);
-                  },
-                ),
-                _buildSwitchTile(
-                  context,
-                  title: 'Guardar automáticamente',
-                  value: _autoSaveEnabled,
-                  onChanged: (value) {
-                    setState(() => _autoSaveEnabled = value);
-                  },
-                ),
-                _buildLanguageTile(context),
-              ],
-            ),
-
-            // Sección: Información
-            _buildSection(
-              context,
-              title: 'Información',
-              children: [
-                _buildInfoTile(
-                  context,
-                  title: 'Versión de la app',
-                  value: AppConfig.appVersion,
-                ),
-                _buildInfoTile(
-                  context,
-                  title: 'Versión del modelo',
-                  value: AppConfig.modelVersion,
-                ),
-                _buildInfoTile(
-                  context,
-                  title: 'Base de datos',
-                  value: AppConfig.databaseName,
-                ),
-              ],
-            ),
-
-            // Sección: Acerca de
-            _buildSection(
-              context,
-              title: 'Acerca de',
-              children: [
-                _buildAboutTile(
-                  context,
-                  icon: Icons.person,
-                  title: 'Autor',
-                  description: AppConfig.appAuthor,
-                ),
-                _buildAboutTile(
-                  context,
-                  icon: Icons.description,
-                  title: 'Descripción',
-                  description: AppConfig.appDescription,
-                ),
-                _buildActionTile(
-                  context,
-                  icon: Icons.open_in_browser,
-                  title: 'Documentación',
-                  onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Documentación: próximamente')),
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(8, 4, 8, 12),
+                child: Text(
+                  'Términos y licencias',
+                  style: TextStyle(
+                    color: _primaryText,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-              ],
-            ),
-
-            // Sección: Privacidad y Legal
-            _buildSection(
-              context,
-              title: 'Legal',
-              children: [
-                _buildActionTile(
-                  context,
-                  icon: Icons.privacy_tip,
-                  title: 'Política de privacidad',
-                  onTap: () => _showPrivacyDialog(context),
-                ),
-                _buildActionTile(
-                  context,
-                  icon: Icons.description_outlined,
-                  title: 'Términos de servicio',
-                  onTap: () => _showTermsDialog(context),
-                ),
-                _buildActionTile(
-                  context,
-                  icon: Icons.info_outline,
-                  title: 'Licencias de librerías',
-                  onTap: () => _showLicensesDialog(context),
-                ),
-              ],
-            ),
-
-            // Sección: Herramientas
-            _buildSection(
-              context,
-              title: 'Herramientas',
-              children: [
-                _buildActionTile(
-                  context,
-                  icon: Icons.build,
-                  title: 'Información del dispositivo',
-                  onTap: () => _showDeviceInfo(context),
-                ),
-                _buildActionTile(
-                  context,
-                  icon: Icons.delete_outline,
-                  title: 'Limpiar caché',
-                  onTap: () => _showClearCacheDialog(context),
-                ),
-              ],
-            ),
-
-            // Footer
-            Padding(
-              padding: const EdgeInsets.all(AppTheme.paddingLG),
-              child: Column(
-                children: [
-                  Text(
-                    '${AppConfig.appName} v${AppConfig.appVersion}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Desarrollado con ❤️ para SENA',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: AppTheme.mediumGrey),
-                  ),
-                ],
               ),
+            ),
+            _LegalOption(
+              icon: Icons.fact_check_outlined,
+              title: 'Términos de uso',
+              onTap: () {
+                Navigator.pop(sheetContext);
+                // No se espera el diálogo porque el toque ya completó su acción
+                // y la hoja debe cerrar antes de presentarlo.
+                unawaited(_showTermsDialog(context));
+              },
+            ),
+            _LegalOption(
+              icon: Icons.code_outlined,
+              title: 'Licencias de código abierto',
+              onTap: () {
+                Navigator.pop(sheetContext);
+                _openLicenses(context);
+              },
             ),
           ],
         ),
@@ -177,282 +287,251 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
-  Widget _buildSection(
-    BuildContext context, {
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppTheme.paddingLG,
-            AppTheme.paddingMD,
-            AppTheme.paddingLG,
-            AppTheme.paddingSM,
-          ),
-          child: Text(
-            title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: AppTheme.primaryColor,
-                  fontWeight: FontWeight.bold,
-                ),
-          ),
-        ),
-        Card(
-          margin: const EdgeInsets.symmetric(
-            horizontal: AppTheme.paddingMD,
-            vertical: AppTheme.paddingSM,
-          ),
-          child: Column(children: children),
+  /// Advierte que la identificación es una ayuda educativa, no una garantía.
+  Future<void> _showTermsDialog(BuildContext context) {
+    return _showInfoDialog(
+      context,
+      title: 'Términos de uso',
+      icon: Icons.fact_check_outlined,
+      children: const [
+        Text(
+          'CUAC es una herramienta educativa de apoyo. Las identificaciones '
+          'pueden contener errores y deben verificarse visualmente antes de '
+          'tomar decisiones de seguridad o manipular material de laboratorio.',
+          style: TextStyle(color: _secondaryText, height: 1.55),
         ),
       ],
     );
   }
 
-  Widget _buildSwitchTile(
+  /// Abre la página de licencias generada por Flutter con el tema de CUAC.
+  void _openLicenses(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (context) => Theme(
+          data: ThemeData.dark(useMaterial3: true).copyWith(
+            scaffoldBackgroundColor: _background,
+            appBarTheme: const AppBarTheme(
+              backgroundColor: _background,
+              foregroundColor: _primaryText,
+              elevation: 0,
+            ),
+            colorScheme: const ColorScheme.dark(
+              primary: _accent,
+              surface: _panel,
+            ),
+          ),
+          child: const LicensePage(
+            applicationName: AppConfig.appName,
+            applicationVersion: AppConfig.appVersion,
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Presenta descripción, versión y autoría declaradas en AppConfig.
+  Future<void> _showAboutDialog(BuildContext context) {
+    return _showInfoDialog(
+      context,
+      title: 'Acerca de CUAC',
+      icon: Icons.info_outline,
+      children: const [
+        Text(
+          AppConfig.appDescription,
+          style: TextStyle(color: _secondaryText, height: 1.55),
+        ),
+        SizedBox(height: 18),
+        _InfoRow(label: 'Versión', value: AppConfig.appVersion),
+        _InfoRow(label: 'Desarrollado por', value: AppConfig.appAuthor),
+        _InfoRow(label: 'Proyecto', value: 'SENA'),
+      ],
+    );
+  }
+
+  /// Plantilla común para diálogos informativos de apariencia consistente.
+  Future<void> _showInfoDialog(
     BuildContext context, {
     required String title,
-    required bool value,
-    required Function(bool) onChanged,
-  }) {
-    return ListTile(
-      title: Text(title),
-      trailing: Switch(
-        value: value,
-        onChanged: onChanged,
-        activeColor: AppTheme.primaryColor,
-      ),
-    );
-  }
-
-  Widget _buildLanguageTile(BuildContext context) {
-    return ListTile(
-      title: const Text('Idioma'),
-      trailing: DropdownButton<String>(
-        value: _language,
-        items: const [
-          DropdownMenuItem(value: 'es', child: Text('Español')),
-          DropdownMenuItem(value: 'en', child: Text('English')),
-        ],
-        onChanged: (value) {
-          if (value != null) {
-            setState(() => _language = value);
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildInfoTile(
-    BuildContext context, {
-    required String title,
-    required String value,
-  }) {
-    return ListTile(
-      title: Text(title),
-      subtitle: Text(
-        value,
-        style: Theme.of(context).textTheme.bodySmall,
-      ),
-      trailing: const Icon(Icons.info_outline),
-    );
-  }
-
-  Widget _buildAboutTile(
-    BuildContext context, {
     required IconData icon,
-    required String title,
-    required String description,
+    required List<Widget> children,
   }) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title),
-      subtitle: Text(
-        description,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-      ),
-    );
-  }
-
-  Widget _buildActionTile(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required VoidCallback onTap,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: AppTheme.primaryColor),
-      title: Text(title),
-      trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-      onTap: onTap,
-    );
-  }
-
-  void _showPrivacyDialog(BuildContext context) {
-    showDialog(
+    return showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Política de Privacidad'),
-        content: SingleChildScrollView(
-          child: Text(
-            '''Esta aplicación recopila y almacena localmente:
-- Imágenes de escaneos
-- Resultados de identificación
-- Notas del usuario
-
-Los datos se almacenan ÚNICAMENTE en tu dispositivo.
-
-No se comparte información con servidores externos a menos que actives la opción de sincronización en nube.
-
-Para más información, contacta al desarrollador.''',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: _panel,
+        icon: Icon(icon, color: _accent, size: 32),
+        title: Text(
+          title,
+          style: const TextStyle(color: _primaryText),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showTermsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Términos de Servicio'),
-        content: SingleChildScrollView(
-          child: Text(
-            '''1. Uso de la aplicación
-Esta aplicación se proporciona "tal cual" para fines educativos y de laboratorio.
-
-2. Precisión
-Los resultados de identificación pueden no ser 100% precisos. Verifica siempre visualmente.
-
-3. Responsabilidad
-El usuario es responsable de usar los resultados de manera segura.
-
-4. Cambios
-Nos reservamos el derecho de cambiar estos términos en cualquier momento.''',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showLicensesDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Licencias'),
-        content: SingleChildScrollView(
-          child: Text(
-            '''Esta aplicación utiliza las siguientes librerías:
-
-• Flutter - BSD License
-• TensorFlow Lite - Apache License 2.0
-• Riverpod - MIT License
-• Camera - BSD License
-• SQLite - Public Domain
-• Logger - MIT License
-• Image - Apache License 2.0
-
-Para más detalles, visita:
-https://pub.dev/packages/[package_name]''',
-            style: Theme.of(context).textTheme.bodySmall,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cerrar'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeviceInfo(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Información del dispositivo'),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildDeviceInfoItem('Plataforma', 'Android / iOS'),
-              _buildDeviceInfoItem('Versión de Flutter', '3.x+'),
-              _buildDeviceInfoItem('Modelo de ML', 'MobileNetV2'),
-              _buildDeviceInfoItem('BD', 'SQLite'),
-              _buildDeviceInfoItem('State Management', 'Riverpod'),
-            ],
+            children: children,
           ),
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cerrar'),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildDeviceInfoItem(String label, String value) {
+/// Tarjeta táctil reutilizada para cada categoría de ajustes.
+class _SettingsCard extends StatelessWidget {
+  const _SettingsCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Column(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Material(
+        color: SettingsScreen._panel,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(19),
+          side: const BorderSide(color: SettingsScreen._border),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+            child: Row(
+              children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(
+                    color: SettingsScreen._iconBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    icon,
+                    color: SettingsScreen._accent,
+                    size: 27,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: const TextStyle(
+                          color: SettingsScreen._primaryText,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        subtitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: SettingsScreen._secondaryText,
+                          fontSize: 13,
+                          height: 1.25,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Icon(
+                  Icons.chevron_right,
+                  color: SettingsScreen._secondaryText,
+                  size: 28,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Fila de etiqueta y valor usada en fichas técnicas y de versión.
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+          Expanded(
+            child: Text(
+              label,
+              style: const TextStyle(color: SettingsScreen._secondaryText),
+            ),
           ),
-          Text(value),
-          const Divider(),
+          const SizedBox(width: 16),
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: const TextStyle(
+                color: SettingsScreen._primaryText,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ],
       ),
     );
   }
+}
 
-  void _showClearCacheDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Limpiar caché'),
-        content: const Text(
-          '¿Estás seguro de que deseas limpiar el caché? Esto no afectará tu historial.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('✓ Caché limpiado')),
-              );
-            },
-            child: const Text('Limpiar'),
-          ),
-        ],
+/// Entrada navegable dentro de la hoja de términos y licencias.
+class _LegalOption extends StatelessWidget {
+  const _LegalOption({
+    required this.icon,
+    required this.title,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      onTap: onTap,
+      leading: Icon(icon, color: SettingsScreen._accent),
+      title: Text(
+        title,
+        style: const TextStyle(color: SettingsScreen._primaryText),
       ),
+      trailing: const Icon(
+        Icons.chevron_right,
+        color: SettingsScreen._secondaryText,
+      ),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 }

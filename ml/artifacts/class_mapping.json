@@ -1,0 +1,26 @@
+{
+  "class_to_idx": {
+    "buretas": 0,
+    "crisoles": 1,
+    "embudos": 2,
+    "gradillas": 3,
+    "matraces": 4,
+    "microscopio": 5,
+    "pinzas": 6,
+    "pipetas": 7,
+    "probeta": 8,
+    "vasos_precipitado": 9
+  },
+  "idx_to_class": {
+    "0": "buretas",
+    "1": "crisoles",
+    "2": "embudos",
+    "3": "gradillas",
+    "4": "matraces",
+    "5": "microscopio",
+    "6": "pinzas",
+    "7": "pipetas",
+    "8": "probeta",
+    "9": "vasos_precipitado"
+  }
+}
