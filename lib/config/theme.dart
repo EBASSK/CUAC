@@ -1,28 +1,37 @@
 import 'package:flutter/material.dart';
 
+/// Sistema visual compartido por todas las pantallas de CUAC.
+///
+/// Centralizar colores, tipografías, espaciados y sombras evita valores aislados
+/// en los widgets y mantiene coherencia entre los modos claro y oscuro.
 class AppTheme {
-  // Colores Primarios
+  // Colores de identidad usados en acciones y elementos destacados.
   static const Color primaryColor = Color(0xFF2563EB); // Azul
   static const Color secondaryColor = Color(0xFF10B981); // Verde
   static const Color accentColor = Color(0xFFF59E0B); // Naranja
+  // Alias cortos conservados para los componentes que ya consumen estos nombres.
   static const Color primary = primaryColor;
   static const Color secondary = secondaryColor;
   static const Color accent = accentColor;
+  // Fondo oscuro base utilizado fuera de los componentes de Material.
   static const Color darkBg = Color(0xFF111827);
 
-  // Colores Neutros
+  // Neutros para fondos, superficies, texto secundario y divisores.
   static const Color darkGrey = Color(0xFF1F2937);
   static const Color mediumGrey = Color(0xFF6B7280);
   static const Color lightGrey = Color(0xFFF3F4F6);
   static const Color whiteColor = Color(0xFFFFFFFF);
 
-  // Colores de Estado
+  // Colores semánticos: comunican éxito, error, advertencia o información.
   static const Color successColor = Color(0xFF10B981);
   static const Color errorColor = Color(0xFFEF4444);
   static const Color warningColor = Color(0xFFF59E0B);
   static const Color infoColor = Color(0xFF3B82F6);
 
-  // Tema Claro
+  /// Tema claro construido sobre Material 3.
+  ///
+  /// Define los estilos por defecto de los controles para que las pantallas solo
+  /// tengan que personalizar aquello que sea específico de su composición.
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
@@ -32,7 +41,6 @@ class AppTheme {
       tertiary: accentColor,
       error: errorColor,
       surface: whiteColor,
-      background: lightGrey,
     ),
     scaffoldBackgroundColor: lightGrey,
     appBarTheme: const AppBarTheme(
@@ -107,7 +115,7 @@ class AppTheme {
     ),
   );
 
-  // Tema Oscuro
+  /// Tema oscuro equivalente al tema claro, con superficies y textos adaptados.
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
@@ -117,7 +125,6 @@ class AppTheme {
       tertiary: accentColor,
       error: errorColor,
       surface: darkGrey,
-      background: const Color(0xFF111827),
     ),
     scaffoldBackgroundColor: const Color(0xFF111827),
     appBarTheme: const AppBarTheme(
@@ -149,7 +156,11 @@ class AppTheme {
     ),
   );
 
-  // TextTheme Claro
+  /// Escala tipográfica para superficies claras.
+  ///
+  /// Los estilos solicitan Poppins para títulos y Roboto para lectura continua.
+  /// Como esas fuentes no se empaquetan actualmente en `pubspec.yaml`, Flutter
+  /// utiliza la alternativa disponible en el sistema cuando no las encuentra.
   static TextTheme _buildTextTheme() {
     return const TextTheme(
       displayLarge: TextStyle(
@@ -215,7 +226,7 @@ class AppTheme {
     );
   }
 
-  // TextTheme Oscuro
+  /// Escala tipográfica para fondos oscuros con contraste accesible.
   static TextTheme _buildDarkTextTheme() {
     return const TextTheme(
       displayLarge: TextStyle(
@@ -281,34 +292,36 @@ class AppTheme {
     );
   }
 
-  // Espaciado
+  // Escala de espaciado. Los widgets deben preferir estos pasos para conservar
+  // un ritmo visual uniforme entre márgenes, separaciones y rellenos.
   static const double paddingXS = 4;
   static const double paddingSM = 8;
   static const double paddingMD = 16;
   static const double paddingLG = 24;
   static const double paddingXL = 32;
 
-  // BorderRadius
+  // Escala de radios para controles, tarjetas y superficies contenedoras.
   static const double radiusXS = 4;
   static const double radiusSM = 8;
   static const double radiusMD = 12;
   static const double radiusLG = 16;
 
-  // Sombras
+  // Niveles de elevación reutilizables. La opacidad y el desenfoque aumentan de
+  // forma progresiva para representar la distancia de cada superficie.
   static final BoxShadow shadowSM = BoxShadow(
-    color: Colors.black.withOpacity(0.05),
+    color: Colors.black.withValues(alpha: 0.05),
     blurRadius: 2,
     offset: const Offset(0, 1),
   );
 
   static final BoxShadow shadowMD = BoxShadow(
-    color: Colors.black.withOpacity(0.1),
+    color: Colors.black.withValues(alpha: 0.1),
     blurRadius: 4,
     offset: const Offset(0, 2),
   );
 
   static final BoxShadow shadowLG = BoxShadow(
-    color: Colors.black.withOpacity(0.15),
+    color: Colors.black.withValues(alpha: 0.15),
     blurRadius: 8,
     offset: const Offset(0, 4),
   );

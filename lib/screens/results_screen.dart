@@ -4,26 +4,35 @@ import 'package:go_router/go_router.dart';
 import '../providers/providers.dart';
 import '../models/prediction.dart';
 import '../config/theme.dart';
+import '../config/app_config.dart';
 
-
+/// Presenta el estado y los resultados de la clasificación de una captura.
+///
+/// También permite añadir notas y guardar hasta tres predicciones en historial.
 class ResultsScreen extends ConsumerStatefulWidget {
+  /// Ruta local de la fotografía que originó la predicción actual.
   final String imagePath;
 
   const ResultsScreen({
-    Key? key,
+    super.key,
     required this.imagePath,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<ResultsScreen> createState() => _ResultsScreenState();
 }
 
 class _ResultsScreenState extends ConsumerState<ResultsScreen> {
+  /// Conserva las notas escritas mientras la pantalla permanece abierta.
   late TextEditingController _notesController;
+
+  /// Bloquea envíos duplicados mientras se persiste el escaneo.
+  bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
+    // El controlador pertenece a esta pantalla y se libera en `dispose`.
     _notesController = TextEditingController();
   }
 
@@ -35,8 +44,8 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Escuchar el estado de predicción usando Riverpod
-    // predictionNotifierProvider gestiona el estado del análisis de IA
+    // Escucha con Riverpod el estado del análisis iniciado desde la cámara.
+    // Cualquier transición del notifier reconstruye únicamente esta pantalla.
     final predictionState = ref.watch(predictionNotifierProvider);
 
     return Scaffold(
@@ -44,21 +53,21 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
         title: const Text('Resultado'),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(), // Volver a la pantalla anterior
+          onPressed: () => context.pop(), // Regresa a la cámara anterior.
         ),
       ),
-      // Mostrar diferentes UI según el estado del análisis
+      // Selecciona la interfaz correspondiente al estado asíncrono del análisis.
       body: predictionState.when(
-        idle: () => _buildEmptyState(context),           // Sin análisis iniciado
-        loading: () => _buildLoadingState(),             // Analizando imagen
-        success: (predictions) => _buildSuccessState(context, predictions), // Análisis completado
-        error: (error) => _buildErrorState(context, error), // Error en análisis
+        idle: () => _buildEmptyState(context), // No hay análisis iniciado.
+        loading: () => _buildLoadingState(), // La inferencia está en curso.
+        success: (predictions) =>
+            _buildSuccessState(context, predictions), // Análisis completado.
+        error: (error) => _buildErrorState(context, error), // Análisis fallido.
       ),
     );
   }
 
-  /// Estado vacío: cuando no hay imagen para analizar
-  /// Se muestra cuando el usuario llega sin haber capturado una imagen
+  /// Estado vacío mostrado si se llega sin una predicción activa.
   Widget _buildEmptyState(BuildContext context) {
     return Center(
       child: Column(
@@ -82,7 +91,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: () => context.pop(), // Volver a cámara
+            onPressed: () => context.pop(), // Vuelve a la cámara.
             icon: const Icon(Icons.camera_alt),
             label: const Text('Capturar'),
           ),
@@ -91,14 +100,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
-  /// Estado de carga: mientras se ejecuta el análisis de IA
-  /// Muestra progreso visual para mantener al usuario informado
+  /// Estado de progreso mientras el modelo local procesa la imagen.
   Widget _buildLoadingState() {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const CircularProgressIndicator(), // Spinner de carga
+          const CircularProgressIndicator(), // Indicador de trabajo en curso.
           const SizedBox(height: 16),
           Text(
             'Analizando imagen...',
@@ -114,10 +122,16 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
-  /// Tarjeta con consejos para mejorar la precisión
+  /// Recomendaciones para mejorar una captura con baja confianza.
   Widget _buildTipsCard(BuildContext context) {
-    return Card(
-      color: const Color(0xFFF59E0B).withOpacity(0.1),
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMD),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.paddingMD),
         child: Column(
@@ -126,50 +140,85 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             Row(
               children: [
                 Icon(
-                  Icons.lightbulb_outline,
-                  color: AppTheme.warningColor,
+                  Icons.tune_outlined,
+                  color: colorScheme.primary,
                   size: 24,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  'Consejos para mejor precisión',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: AppTheme.warningColor,
-                        fontWeight: FontWeight.bold,
-                      ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Mejora la captura',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
             Text(
-              'Para obtener mejores resultados:',
-              style: Theme.of(context).textTheme.bodyMedium,
+              'El resultado tiene baja confianza. Intenta lo siguiente:',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
             ),
-            const SizedBox(height: 8),
-            _buildTipItem('📸 Toma la foto desde arriba, centrando el instrumento'),
-            _buildTipItem('💡 Asegúrate de buena iluminación sin sombras fuertes'),
-            _buildTipItem('🎯 Enfoca bien el instrumento sin objetos alrededor'),
-            _buildTipItem('📏 Mantén una distancia adecuada (20-30 cm)'),
-            _buildTipItem('🔄 Prueba diferentes ángulos si no funciona'),
+            const SizedBox(height: 14),
+            _buildTipItem(
+              Icons.center_focus_strong_outlined,
+              'Centra un solo instrumento dentro del marco.',
+            ),
+            _buildTipItem(
+              Icons.light_mode_outlined,
+              'Usa luz uniforme y evita sombras fuertes.',
+            ),
+            _buildTipItem(
+              Icons.filter_center_focus_outlined,
+              'Mantén el instrumento enfocado y el fondo despejado.',
+            ),
+            _buildTipItem(
+              Icons.straighten_outlined,
+              'Conserva una distancia aproximada de 20 a 30 cm.',
+            ),
+            _buildTipItem(
+              Icons.rotate_90_degrees_ccw_outlined,
+              'Cambia ligeramente el ángulo si el resultado no mejora.',
+            ),
           ],
         ),
       ),
     );
   }
 
-  /// Item individual de consejo
-  Widget _buildTipItem(String tip) {
+  /// Elemento reutilizable que alinea el icono y el texto de cada consejo.
+  Widget _buildTipItem(IconData icon, String tip) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
-      child: Text(
-        tip,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: AppTheme.mediumGrey,
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            icon,
+            size: 19,
+            color: colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              tip,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
             ),
+          ),
+        ],
       ),
     );
   }
 
+  /// Construye el informe con la predicción principal y sus alternativas.
   Widget _buildSuccessState(
     BuildContext context,
     List<Prediction> predictions,
@@ -186,7 +235,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Predicción Principal
+          // Resumen principal: nombre, categoría y nivel de confianza.
           Card(
             child: Padding(
               padding: const EdgeInsets.all(AppTheme.paddingLG),
@@ -200,7 +249,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Instrumento Detectado',
+                              topPrediction.confidence >=
+                                      AppConfig.confidenceThreshold
+                                  ? 'Instrumento detectado'
+                                  : 'Resultado con baja confianza',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                             const SizedBox(height: 8),
@@ -231,33 +283,33 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                           ],
                         ),
                       ),
-                      // Indicador de confianza circular
+                      // El borde circular cambia de color según la confianza.
                       Container(
                         width: 100,
                         height: 100,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: _getConfidenceColor(topPrediction.confidence),
-                          boxShadow: [
-                            BoxShadow(
-                              color: _getConfidenceColor(topPrediction.confidence)
-                                  .withOpacity(0.3),
-                              blurRadius: 10,
-                              spreadRadius: 2,
-                            ),
-                          ],
+                          color: _getConfidenceColor(topPrediction.confidence)
+                              .withValues(alpha: 0.08),
+                          border: Border.all(
+                            color:
+                                _getConfidenceColor(topPrediction.confidence),
+                            width: 3,
+                          ),
                         ),
                         child: Center(
                           child: Column(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                '${topPrediction.confidence.toStringAsFixed(0)}%',
+                                '${(topPrediction.confidence * 100).toStringAsFixed(0)}%',
                                 style: Theme.of(context)
                                     .textTheme
                                     .displaySmall
                                     ?.copyWith(
-                                      color: Colors.white,
+                                      color: _getConfidenceColor(
+                                        topPrediction.confidence,
+                                      ),
                                       fontWeight: FontWeight.bold,
                                     ),
                               ),
@@ -266,7 +318,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                 style: Theme.of(context)
                                     .textTheme
                                     .bodySmall
-                                    ?.copyWith(color: Colors.white),
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
                               ),
                             ],
                           ),
@@ -281,12 +337,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
           const SizedBox(height: AppTheme.paddingMD),
 
-          // Consejos si la confianza es baja
+          // Este 0.7 es solo el umbral visual para mostrar consejos; es
+          // independiente del umbral de confianza configurado para el resultado.
           if (topPrediction.confidence < 0.7) _buildTipsCard(context),
 
           const SizedBox(height: AppTheme.paddingMD),
 
-          // Otras opciones (Top 3)
+          // Alternativas restantes dentro de las tres mejores predicciones.
           Text(
             'Otras opciones',
             style: Theme.of(context).textTheme.titleMedium,
@@ -320,19 +377,22 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                       ),
                     ),
                     Chip(
-                      label: Text('${prediction.confidence.toStringAsFixed(0)}%'),
-                      backgroundColor: _getConfidenceColor(prediction.confidence)
-                          .withOpacity(0.2),
+                      label: Text(
+                        '${(prediction.confidence * 100).toStringAsFixed(0)}%',
+                      ),
+                      backgroundColor:
+                          _getConfidenceColor(prediction.confidence)
+                              .withValues(alpha: 0.2),
                     ),
                   ],
                 ),
               ),
             );
-          }).toList(),
+          }),
 
           const SizedBox(height: AppTheme.paddingMD),
 
-          // Información del instrumento
+          // Descripción opcional proporcionada por la información de dominio.
           if (topPrediction.description != null) ...[
             Text(
               'Información',
@@ -354,7 +414,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             const SizedBox(height: AppTheme.paddingMD),
           ],
 
-          // Notas del usuario
+          // Campo local que se persiste únicamente al pulsar Guardar.
           Text(
             'Notas (opcional)',
             style: Theme.of(context).textTheme.titleMedium,
@@ -373,7 +433,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
           const SizedBox(height: AppTheme.paddingLG),
 
-          // Botones de acción
+          // Acciones para repetir la captura o guardar el resultado actual.
           Row(
             children: [
               Expanded(
@@ -386,42 +446,54 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
               const SizedBox(width: AppTheme.paddingMD),
               Expanded(
                 child: ElevatedButton.icon(
-                  icon: const Icon(Icons.check),
-                  label: const Text('Guardar'),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('✅ Guardado en historial')),
-                    );
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      if (mounted) context.go('/history');
-                    });
-                  },
+                  icon: _isSaving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.check),
+                  label: Text(_isSaving ? 'Guardando...' : 'Guardar'),
+                  onPressed: _isSaving ? null : _saveScan,
                 ),
               ),
             ],
           ),
 
           const SizedBox(height: AppTheme.paddingMD),
-
-          // Botón compartir
-          Center(
-            child: TextButton.icon(
-              icon: const Icon(Icons.share),
-              label: const Text('Compartir resultado'),
-              onPressed: () {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Compartir: próximamente'),
-                  ),
-                );
-              },
-            ),
-          ),
         ],
       ),
     );
   }
 
+  /// Persiste una copia procesada, hasta tres predicciones y las notas escritas.
+  Future<void> _saveScan() async {
+    setState(() => _isSaving = true);
+    try {
+      await ref.read(predictionNotifierProvider.notifier).saveCurrentScan(
+            widget.imagePath,
+            notes: _notesController.text,
+          );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Guardado en el historial')),
+      );
+      // `go` reemplaza el flujo de captura ya completado por el historial.
+      context.go('/history');
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo guardar: $error')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSaving = false);
+      }
+    }
+  }
+
+  /// Presenta el mensaje de error y ofrece regresar para una nueva captura.
   Widget _buildErrorState(BuildContext context, String error) {
     return Center(
       child: Column(
@@ -457,6 +529,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
     );
   }
 
+  /// Traduce una confianza normalizada a un color semántico de la interfaz.
   Color _getConfidenceColor(double confidence) {
     if (confidence >= 0.8) return AppTheme.successColor;
     if (confidence >= 0.6) return AppTheme.warningColor;

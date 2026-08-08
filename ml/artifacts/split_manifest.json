@@ -1,0 +1,800 @@
+[
+  {
+    "path": "data/instruments/buretas/24.231.11.jpg",
+    "class": "buretas",
+    "sha256": "32e991be168217966a009c44ef6e8892f4faa569e9e1bb19d5f8e8a62c33e593",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/buretas/bureta-1.jpg",
+    "class": "buretas",
+    "sha256": "b33898bc1b6131dda8caaf92b6aebcddb4d871964cab78e1ed8a6475d06614ca",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/buretas/BURETA-AUTOMATICA-GLASSCO.jpg",
+    "class": "buretas",
+    "sha256": "5a383ca501c6f44cab179380143da8cfc3926d06af4749e3f0c28e488640c6da",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/buretas/bureta1-1-1.jpg",
+    "class": "buretas",
+    "sha256": "a94d3894b5d72d8f7562facf8c21450c9388319f129c8580f1734ee9bdb6f86a",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/buretas/images (1).jpg",
+    "class": "buretas",
+    "sha256": "67e9a461d922b3b7905efb40f785d278330e58bd0580aa6ea52d41d2cff58fe4",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/buretas/images (2).jpg",
+    "class": "buretas",
+    "sha256": "49dcad75d74d6602073f87de5f977b5b8a4bedb4c5d4ae80ef441e2a6ba30f8c",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/buretas/images (3).jpg",
+    "class": "buretas",
+    "sha256": "d2c22e293f05ad52d19694a2959e9dcdad0a85e14b9adf8218767adf3cb45d25",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/buretas/images (4).jpg",
+    "class": "buretas",
+    "sha256": "05efcdc0295c5f7efc5e653e83370f317927443059d117df59af0315f6c1a3a2",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/buretas/images (5).jpg",
+    "class": "buretas",
+    "sha256": "1d9d84a3459d14e9743010a14b61ddfb144b76d1a18ed390bd7d7aa62e9f4960",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/buretas/images (6).jpg",
+    "class": "buretas",
+    "sha256": "60915cbe991da2af2dbe7d2c7908a7e9505b0cc3c853524da7eb9afe76d07b2e",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/buretas/images (7).jpg",
+    "class": "buretas",
+    "sha256": "f62e564dfa9d5874c0792270653d06b4070d3a3cc8497f9a572e0f0e97e82145",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/buretas/images.jpg",
+    "class": "buretas",
+    "sha256": "9408be68380853262c36ed3a5787dbc2f2a963f7dc2dc9546362160ae4000801",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/crisol-30-ml-3-b040bedd03698b21e617065505952808-640-0.webp",
+    "class": "crisoles",
+    "sha256": "9c7ea64492a9bbcda4043a00ba35a3ad1f8e2011c35c9de5cc576e1b675a5c0b",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/crisoles/crisol-30ml-2-9d1ce0627358d5d52e17065505951098-1024-1024.webp",
+    "class": "crisoles",
+    "sha256": "3c3dad7cd2cdca5c99d5e7ec8f91bd63a3ea3dc9d8a38d4647a6e6188091b5f7",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/crisol-de-laboratorio.jpg",
+    "class": "crisoles",
+    "sha256": "b7fd49aaf5150fa7cee24b202cac46dbaf2ee0d749013b77c8c623abab07d883",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/crisoles/CRISOLES-EN-PORCELANA-FORMA-ALTA-SIN-TAPA-JIPO.jpg",
+    "class": "crisoles",
+    "sha256": "9fd2e30126318d6ba2b07b4f1fe4c44d68e0f84753ea6f566ae3c33b645cff97",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/crisoles/crisoles_0.jpg",
+    "class": "crisoles",
+    "sha256": "f467edb169f7c6bd80f5cd8cddc237d12da5ed7264b5390123063bceda83a3f5",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/images (1).jpg",
+    "class": "crisoles",
+    "sha256": "ccae4ee28a11a28b474de622ef2b52f469c74c97e9de2fdda2de87d6d4ee20b9",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/images (2).jpg",
+    "class": "crisoles",
+    "sha256": "19114f9e894b34755e2043b74ce66e3ff9187a829d29d08c91d6422eab2bb408",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/images (3).jpg",
+    "class": "crisoles",
+    "sha256": "112c6ee7feb6b43a5bc61a120afb7bc688a9d6bb1da7d1d535dbd3e52d31aebb",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/crisoles/images (4).jpg",
+    "class": "crisoles",
+    "sha256": "1ef8477c4615065ecf72c23128c58c8810ca1f551efa227ac645c38d71a24b19",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/images (5).jpg",
+    "class": "crisoles",
+    "sha256": "b9e9074a72a8d27c2d4b4b457850b377cda58400ef95ef8e4e5d2bb351faabd2",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/crisoles/images.jpg",
+    "class": "crisoles",
+    "sha256": "fdd0c1b5bee78254a8eb21f025019a979b79692534a098642f8d0c03c550ced2",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/embudos/5YHV6_AS02.jpg",
+    "class": "embudos",
+    "sha256": "482f73ea853d52d330522c1dd7fb3113a2e70c964544be35ebff8c7dbcad9e7d",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/67012.116780.jpg",
+    "class": "embudos",
+    "sha256": "d6eb683e9431db57a8691e89853060f5b4639a9f99d6e83fc872509e28c785ef",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/67014.116782.jpg",
+    "class": "embudos",
+    "sha256": "00da71fa46bc46f49126d840ddaa8c7e7e3ae173d99971b88280d8c2b41ff013",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/embudo de decantación.jpeg",
+    "class": "embudos",
+    "sha256": "a52c6e7b155eefc41ab5b56a81ab2ad312c4edc2e69e1df25ef9a22a72115da9",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/embudo de plástico.jpeg",
+    "class": "embudos",
+    "sha256": "b6e16aa39b1212276f19f8448a1b8de55a6ac6e87c939c0d3692059ebc976a49",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/embudos/embudo de vidrio.jpeg",
+    "class": "embudos",
+    "sha256": "dff592b62b9323cd223d31e6671f87eeb506bdfe0f14867246a2da91025fc47d",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/embudos/embudo filtrante.jpeg",
+    "class": "embudos",
+    "sha256": "b128f0e21d5afd218759f224f3580921e084d314ee449ade7019bd28b89eee15",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/embudos/embudo-1.jpg",
+    "class": "embudos",
+    "sha256": "52a248232e6c07fa3c83cb706d5e2bcb0a820b343efd74368a13c3a939c9a28c",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/embudos/Embudos buchner.jpeg",
+    "class": "embudos",
+    "sha256": "89dabe631692668d530468b9e4d0420c4183737420cc9eda37f9b247608cf6da",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/embudos-de-separacion.jpg",
+    "class": "embudos",
+    "sha256": "66d44410dc3018a21caaf013102bfcf9c8d6b6409d044a741714f0acf22f4294",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/images (1).jpg",
+    "class": "embudos",
+    "sha256": "37386e145db9a75f6be8fb97ef12bdd452bcdb71927927636d2419e01f746ff3",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/embudos/images (2).jpg",
+    "class": "embudos",
+    "sha256": "e36b74c79d51f34623a33b07f3b26b412101f72496e73569d87fc6025c88150f",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/images (3).jpg",
+    "class": "embudos",
+    "sha256": "4528b7a56ab92c4f0671d7fd3b64754c988824fa0777a1160eee2dce1c6c254e",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/embudos/images.jpg",
+    "class": "embudos",
+    "sha256": "15998ef6c0547172bab52fa740d7958bfc70cafe43ec90253d0d8f4bf921cecc",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/embudos/Portable-Large-Plastic-Lab-Funnel-50mm.avif",
+    "class": "embudos",
+    "sha256": "78e583e61f5cd9c6b506d3e2ef372fc949291fa8e83da37d3b1c0f0a1206e10f",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/0H-22-99.jpg",
+    "class": "gradillas",
+    "sha256": "1ee14e784238bf2200e8d8ba62bbe9294b0abb69e26cd964bcbabc8dd345dc6f",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/gradillas/descarga.jpg",
+    "class": "gradillas",
+    "sha256": "159750d5f6e72ca5a69399a839c3d37bf65cfe9dea50f1516664ad003bc1b8d8",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/Gradilla-de-polipropileno.jpg",
+    "class": "gradillas",
+    "sha256": "f15324b93968f86d318ef8135d2c4d05b033535de8e95f93d1bc8fe540194c19",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/gradilla.jpg",
+    "class": "gradillas",
+    "sha256": "d7f351efb0b4a1659ccbfbbbce3dc50d7f54bb9f226d4ef285ddabf0893b3d13",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/gradillas/images (1).jpg",
+    "class": "gradillas",
+    "sha256": "84e369d8b85ba023f150b144dfd39ab0c117ddd04e7110525b03d41871bd0aef",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/images (2).jpg",
+    "class": "gradillas",
+    "sha256": "ab3e5d8ba2ae9e2ed04d86828f6e409497d493071bf9ae61629e7ac852d4c202",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/images (3).jpg",
+    "class": "gradillas",
+    "sha256": "f22b6bf29843c3a312f9eb4e33b067787943932174e7e9aa6d779195956db034",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/images (4).jpg",
+    "class": "gradillas",
+    "sha256": "e3625d88f62f3da8998d64a22d44c94e1dcec622ea1e17074f182cf84d6b0622",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/images (5).jpg",
+    "class": "gradillas",
+    "sha256": "3be861cbb7ec43b65285590625e732363125b42708b69991c1cc170f31b25996",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/images (6).jpg",
+    "class": "gradillas",
+    "sha256": "b4b05faaa3e09e2dce12510432b0fce7cc3b4b6a0ab3f6cf56a0992145a2c6f9",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/gradillas/images (7).jpg",
+    "class": "gradillas",
+    "sha256": "742f56c4a6cb2a046718faac7698ee461607b4ddc91ef4b1cb5b22b3440d6e91",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/gradillas/images.jpg",
+    "class": "gradillas",
+    "sha256": "fcb59c2d3b8ff638dbd0ab43a29f708dd42eebb38c6b17ecb5883e012a04c495",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/matraces/15.png",
+    "class": "matraces",
+    "sha256": "d9e198e21a3ca43c2c1bd290ef523f9b475055bfaba37bb83d0847dcd3ae8061",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/241847-17041020.jpg",
+    "class": "matraces",
+    "sha256": "87fc66d423185b3f7f6d9b83ca994b866552af7705c3f2539f7e9980bf33e82e",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/images (1).jpg",
+    "class": "matraces",
+    "sha256": "ab339954040b192c545a60881987ea1dcb0e2ac0729297a800af44f212ef0018",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/images (2).jpg",
+    "class": "matraces",
+    "sha256": "04751e2790fd971d78853da07f2ccc3988f73f183fd17a9c567fb4c42b0d82d6",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/matraces/images (3).jpg",
+    "class": "matraces",
+    "sha256": "d7b432a6b363ca7336f9aed32308f82a270b278a17a539b43b8f6adb44445ff4",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/matraces/images (4).jpg",
+    "class": "matraces",
+    "sha256": "8de885fc2bcf9a1e2b35388c14282270a09c2d43ec9fc073c4d43c9802853c1f",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/matraces/images (5).jpg",
+    "class": "matraces",
+    "sha256": "17648482328f62b0bffa6bcbd86a09c9ceda46cbb7d4050a67d22d74f690cf01",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/matraces/images (6).jpg",
+    "class": "matraces",
+    "sha256": "c6cd23370b80e4305eb1d4c4f3b2abbdc246d69ed5ca78f99f914bda5a7e565b",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/matraces/images (7).jpg",
+    "class": "matraces",
+    "sha256": "33a8df059ab766822ba440133978d60e6e8fde71041792316c3956cefb3c0779",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/images (8).jpg",
+    "class": "matraces",
+    "sha256": "5455f54b5acf6bf69991c54927826c956b08ead4542a506c6e99bda34e360e46",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/images.jpg",
+    "class": "matraces",
+    "sha256": "e58ddf892621cc7be9c562f44c61a50b5024e62b45a0b8fecd80de46bac2bc4e",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/matraces-de-fondo-plano.jpg",
+    "class": "matraces",
+    "sha256": "382da34d3648b08fe8eba28e3d33b42658704156304e3ad352cf2d5030cf5f6d",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/matraces/matraz_destilacio.jpg",
+    "class": "matraces",
+    "sha256": "4a34b6cdd7fa93cb490816eeba417b381d4e5354b81423e56cab527c744b0858",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/MATRAZERLENMEYERKIMAX26650CONBOCAANCHAYREFORZADAKX-26650-500-MERCALAB.webp",
+    "class": "matraces",
+    "sha256": "785291f42ceb2b57273e178bf4961b9a934032d508f00f7de6affadfe73f70e6",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/matraces/premium_photo-1758841122332-9e5fe00a11f0.avif",
+    "class": "matraces",
+    "sha256": "8a0bdf5d76ebd65548948ffb98ba174f67bb7e1bac5489dcecab07477ea9d885",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/microscopio/D_NQ_NP_808797-MLA103624189898_012026-O.webp",
+    "class": "microscopio",
+    "sha256": "48142307d846ff8fd594a711bbb2a8c180387ab03cd4f35a2f6737c9ba94d382",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/microscopio/images (1).jpg",
+    "class": "microscopio",
+    "sha256": "2624036eb26b6928aca20a5ace595f00c571b6633cabd27d3971514bdfe8ddb3",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/microscopio/images (2).jpg",
+    "class": "microscopio",
+    "sha256": "c6a5784012a59e365ca791ea5f0ec591be9b72adfb0bb5baed839218787a048b",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/microscopio/images (3).jpg",
+    "class": "microscopio",
+    "sha256": "e2c708126f9c16523a479cf4f1d16d4ba3bdd921b1a8e20db70800495133220d",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/microscopio/images (4).jpg",
+    "class": "microscopio",
+    "sha256": "a581f687ec32dbef6eabf673625f8a22faab30631dbe494cd8b419e1f8e6e390",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/microscopio/images (5).jpg",
+    "class": "microscopio",
+    "sha256": "3b8c5ee13bc3631956f2dcd94c805d036e791462890bd461bc7131e38b6c08ff",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/microscopio/images (6).jpg",
+    "class": "microscopio",
+    "sha256": "f6d5fe898c9cf5a410efcd103226add8250d3c4ea97809e02167b34e0f92d4f1",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/microscopio/images (7).jpg",
+    "class": "microscopio",
+    "sha256": "749fe98c8dbe9478113d2c375ed8fedebab1030484180b1a4e2810bdd6d14313",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/microscopio/images (9).jpg",
+    "class": "microscopio",
+    "sha256": "80240a01331a762c783fe5b37563cea41d2f7d75e2a0943306f6d47144173123",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/microscopio/images.jpg",
+    "class": "microscopio",
+    "sha256": "56ceb692a6cdb38a95c8ef1fbcaa3ee8f81e23331951ebd4db876e2d8d093f01",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/microscopio/Microscopio-binocular-Serie-BM33-tienda.jpg",
+    "class": "microscopio",
+    "sha256": "f3ca8fb948d96f4a22178a4807e7217bcf815c4aa9bcc6edb9ba78d3b865e243",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/microscopio/Microscopio-de-laboratorio-Binocular-compuesto-40x-2500x-camara-0.3-MP-USB-digital-1-1.webp",
+    "class": "microscopio",
+    "sha256": "a27cf884f280134b53bd0b409f832a4e4be17556af303ae1658379d02346ce2d",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/0025416_pinza-metalica-extension-tres-dedos-sin-nuez-labscient_510.jpeg",
+    "class": "pinzas",
+    "sha256": "91902efe177f4621e721e6d60aeaab108776b41b02f7e370a0e54953e3156481",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/40106.04-PINZAS-METALICAS-EXTENSION-DE-3-DEDOS-CON-NUEZ-Y-UN-AJUSTE-LABSCIENT.jpg",
+    "class": "pinzas",
+    "sha256": "5a2edea64c0f5a0a11c8ea27d781f9a655ad591288d70cb9a187aa992cf7e5f5",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/51e5ZoKOa2L._AC_UF894,1000_QL80_.jpg",
+    "class": "pinzas",
+    "sha256": "cf7030b72cf8fd7fa9b491dda4c2f71d53a5a90879c4223837673f26b56549a5",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/b59aa1b9-456f-4e72-a3af-bd785b35cd85.f41d8dafef4e3ee5a953e3a358b749bb.avif",
+    "class": "pinzas",
+    "sha256": "8937fe9b8cd2427fd5a4e6bbdb92bb05b3486cf12a47ac9b34bcf94b4409c711",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pinzas/D_NQ_NP_845215-CBT104704477717_012026-O.webp",
+    "class": "pinzas",
+    "sha256": "04097d8f44a5f61d6f4d80fb3248d2e1683fa046c11e5be7a5eafaa7c16657c9",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/images (1).jpg",
+    "class": "pinzas",
+    "sha256": "e50e9d62e7af13ecda6e86bc8b55958eab6c6f7fd035aa5b52b8747730cef05f",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pinzas/images (2).jpg",
+    "class": "pinzas",
+    "sha256": "319f08b772d2c38917becc20c7362d2103afa93333e441113107c272a0cdc0f7",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/images.jpg",
+    "class": "pinzas",
+    "sha256": "d0ff52fa00b06787db3118f6579e1f398f9c684c6d8ad95d18ad6d5fe3fe3aba",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/PINZA-METALICAS-PARA-ERLENMEYER-O-MATRAZ-1.jpg",
+    "class": "pinzas",
+    "sha256": "774281962617d910b58fbc4ce26f00c7fc425eb6317986a7bd4601245272fb52",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/Pinza-para-Bureta.jpg",
+    "class": "pinzas",
+    "sha256": "60c77550ba3a91a365af153db68953887566bc20d4289a283b89738747d31721",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/pinzas/pinza_laboratorio1.jpg",
+    "class": "pinzas",
+    "sha256": "a4282d7296d96d43256e525c36b7b9aee7e6ce3ffa02f1e400cdae46167e72d7",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pinzas/PINZAPARAVASODEPRECIPITADOGLASSCO396.303DEACEROINOXIDABLELARGO30CMGL-396.303.04-MERCALAB.webp",
+    "class": "pinzas",
+    "sha256": "0dc846936a3945e891636d15596627775764f5031bbea620b9c04ca3038b9f2f",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/pinzas/pinzas-metalicas-para-crisol.jpg",
+    "class": "pinzas",
+    "sha256": "625c4c4c859f921050a2231ee211f5d2f313c755f214cc7dc7accb2aea80c41d",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pinzas/pinzas-para-buretas-y-tubos.jpg",
+    "class": "pinzas",
+    "sha256": "aaa1b5f6461f0f7727cb358a3527452b8da2cadab553bdff851f782a6e6f6bf6",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (1).jpg",
+    "class": "pipetas",
+    "sha256": "f9aeb7e4385f608556cdcb1720b15577dd301625123e4683be59ed6b02287305",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (10).jpg",
+    "class": "pipetas",
+    "sha256": "066cdb768371169e54200359afa574cd6ea87312da663276f0d0cb8fa6b5a8a9",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (2).jpg",
+    "class": "pipetas",
+    "sha256": "ccd5ddc48124c0a2c50f0411d10f06dc40a25df49bed487118e2c0cb5d0fa5a2",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (3).jpg",
+    "class": "pipetas",
+    "sha256": "2a0bf1b8287a3ae0b6553d6f1b50d927ab6a82c8f7ae1e5dc5bdb1030c3a32bd",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (4).jpg",
+    "class": "pipetas",
+    "sha256": "306a65f5260249302416ce0244100fc3e27fc78aec36e6b880e5af1ab61bae04",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (5).jpg",
+    "class": "pipetas",
+    "sha256": "82ee941bd6ffa32bd0609702c82832f715c8322f2652a7e7812e6dded067e8bd",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (6).jpg",
+    "class": "pipetas",
+    "sha256": "4dba629544491004a5c61205310b347a4b45d807ddc574f251bec7985dbda58d",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pipetas/images (7).jpg",
+    "class": "pipetas",
+    "sha256": "916c60a3938c68aa26295969f196a5940e1d6023fe995b6a245bdc8fea6aa9fc",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/pipetas/images (8).jpg",
+    "class": "pipetas",
+    "sha256": "780595a9ed8fd909efd17975166c2260d18a393af815cd702d902b60c67e05b1",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images (9).jpg",
+    "class": "pipetas",
+    "sha256": "0a59d5b8ff325056649ed1ee9a42487732f157eaa159a28cbb6435bee30faf45",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images.jpg",
+    "class": "pipetas",
+    "sha256": "2a49a5a8e0b44f8af4352e3daa6df850a2622b3746a82c6ccf5bbbeff6aa6ed5",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/pipetas/images.png",
+    "class": "pipetas",
+    "sha256": "288168f5d1343c9a5a7a1d282a89d6fabdc19a3579771e02fc5fbb2a55fad72b",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pipetas/L_034940_pipeta-graduada.jpg",
+    "class": "pipetas",
+    "sha256": "a12ee81b03ab8ff9a4c68c04556497359560f08a6b298b80a403373c6c26dfdd",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/pipetas/media.webp",
+    "class": "pipetas",
+    "sha256": "89e9ba0293e4faceb1c5345362d2d371801d86b7b778c30f11eda7ae3798a161",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pipetas/pipeta serologica.webp",
+    "class": "pipetas",
+    "sha256": "37562cace5133384b375da673cf76eac76b6e92f458e5899ebcb097694ece989",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/pipetas/pipeta-volumetrica-vidrio-certificado-fabrica-lote-din-iso-648-800x800.png",
+    "class": "pipetas",
+    "sha256": "058a3fdff4004269dd4b76d6224486a1e123a8b6225ff03fdf358aed347c5910",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/probeta/177.303.01.jpg",
+    "class": "probeta",
+    "sha256": "7e2a688e5da8f17d97a17f38beae81b50c7a3ad86d82a69d67af2496b6480f36",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/probeta/35008_2.jpg",
+    "class": "probeta",
+    "sha256": "d25c7c6687d70d24cc98268dadda76d9de064c7de5ba29081d4ed6bf429b942d",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/D_NQ_NP_696513-CBT99618060815_112025-O.webp",
+    "class": "probeta",
+    "sha256": "3c09882026f2704f2e30653f5f1b8b0ffd29d0335ad3c7e44949d7cae2aece84",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/images (1).jpg",
+    "class": "probeta",
+    "sha256": "9ada4c4f4442121dd81bb62d10b45c256f21d4ce8f059c7ca3777c89296ee001",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/probeta/images (11).jpg",
+    "class": "probeta",
+    "sha256": "3c620636843d00f8417b57f980de3b4a9469ca24900f47b7ce9b385df6a03684",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/images (2).jpg",
+    "class": "probeta",
+    "sha256": "1950e825896e00b0973a3d4a374fd9c00119ed1cc62a2c1c9173525245a89169",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/probeta/images (3).jpg",
+    "class": "probeta",
+    "sha256": "cb20ee205d0b4827dc15cd1e15b427b05b272858c831f089d883ba1756267ba0",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/images (4).jpg",
+    "class": "probeta",
+    "sha256": "d4b8f4bbe9683e7389be6109d86c89a7997e9252cb4ce43bba59016f9f462ed3",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/probeta/images (5).jpg",
+    "class": "probeta",
+    "sha256": "51668b792c781ae14a96c1fd6faa175bcbdd9f97fd73036e50d15580da0d97f5",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/images (6).jpg",
+    "class": "probeta",
+    "sha256": "a72ec0bf3a58b19ed3a1f43628ec6bda0f42316a4b27b6518ef343eb0c8aca9e",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/images (7).jpg",
+    "class": "probeta",
+    "sha256": "61b9cfe55caf5db80518dd704b9b95f66d111728dd116ee0cf2a00ac193beedc",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/probeta/images.jpg",
+    "class": "probeta",
+    "sha256": "c38a99d53f2c478a3516a3c9d5da9ea2e4e3b94cf8d7490b6d03611ae146f886",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/probeta-1.jpg",
+    "class": "probeta",
+    "sha256": "e971fcac01f86aa66882c637c727392a77f65bda49e18f80874eea95d1857de4",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/probeta/PROBETACONBASEDEPLASTICOGLASSCO137.202CALIBRADAPARAENTREGARCONESCALAAZULYBUMPERIDEALPARAUSOESTUDIANTILGL-137.202-MERCALAB.webp",
+    "class": "probeta",
+    "sha256": "3085036e720f762131fdcd214e7630ccb28de962ac9a2c460960b0d58ec836e1",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/101.303.-VASOS-PRECIPITADO-PLASTICOS-EN-ALTO-RELIEVE-POLYLAB.jpg",
+    "class": "vasos_precipitado",
+    "sha256": "8752e3019c822853233da2518e2d7c3c5b23568b68348de87b58db7409a7a528",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/beaker.jpg",
+    "class": "vasos_precipitado",
+    "sha256": "45a79ef1c4f5e315ffc03fc21ac862fa4c1e236cd2fe7669dccf99e62e8314c6",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (1).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "ec2d3a22c344626fcad8b007942bcfd2e9eecf7aaa5bdf179d04694caa6b941f",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (2).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "e2af09f4c811b69f0246007a49b535930af4e76d36bbc3d933555b0f9fd9034f",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (3).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "d8da9ab23f5a3fc84673d0852154e1bb0346457d5b6f86d9fde343ba3e372134",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (4).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "f33154976dccf94c8ad259d70b47c5ac0f7ddc47f40f9d6eb0ec8f7f7c5e0156",
+    "split": "validation"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (5).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "32dc7265aa00c8068314c483f67cd5b0c8dc4c79758ae44180cd9463de988ba4",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (6).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "e395d300b90b2ef709889c7e7e171705eaf06d16bd467eb94e8099e83510c43a",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images (8).jpg",
+    "class": "vasos_precipitado",
+    "sha256": "9c3518bba9431ea4d52edd5dca6fa08f318d4be62f2b3ae51e257bc222ef8e66",
+    "split": "test"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/images.jpg",
+    "class": "vasos_precipitado",
+    "sha256": "579716981a179f04a2b0db248e2885c2955bce8cba61eb618744e87682dd336c",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/vaso-precipitados-plastico.jpg",
+    "class": "vasos_precipitado",
+    "sha256": "0722ef67b8746686a63e079aae278e082707f6230e2cf9d2cea17e2040662fbb",
+    "split": "train"
+  },
+  {
+    "path": "data/instruments/vasos_precipitado/vaso_precipitado2-300x300.jpg",
+    "class": "vasos_precipitado",
+    "sha256": "6beb8ae43f681dc336fcdc8f5c4df0a6d25bdaa89599048733726083e2059f81",
+    "split": "train"
+  }
+]

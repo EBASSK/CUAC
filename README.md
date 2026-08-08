@@ -1,187 +1,227 @@
-# CUAC - Lab Instrument Identifier
+# CUAC — Lab Instrument Identifier
 
-Aplicación Flutter completa para identificar instrumentos de laboratorio usando inteligencia artificial en el dispositivo.
+Aplicación móvil Flutter que identifica instrumentos de laboratorio mediante
+un modelo TensorFlow Lite ejecutado completamente en el dispositivo.
 
----
+## Estado actual y cambios recientes
 
-## Estado actual del proyecto
+La versión actual incluye una revisión completa del flujo de cámara y una
+actualización visual orientada a dispositivos móviles reales:
 
-Este repositorio ya no es un proyecto Flutter vacío. Está transformado en una app funcional con:
-- `assets/models/instrument_model.tflite` como modelo TFLite integrado.
-- `assets/models/labels.txt` con las clases de instrumentos.
-- `lib/screens/splash_screen.dart` diseñado con animación, logo y Material Design 3.
-- `lib/services/tflite_service.dart` para cargar el modelo y obtener predicciones.
-- `setup_ml.py` adaptado para copiar el modelo y las etiquetas dentro de `assets/models/`.
-- `train_model_v2.py` para entrenar y exportar el modelo desde dataset.
-- Integración de cámara, historial local y navegación con GoRouter.
+- La cámara usa una única inicialización compartida y deja que el plugin
+  `camera` gestione la solicitud del permiso nativo.
+- El ciclo de vida de Android libera la cámara al enviar la aplicación a
+  segundo plano y espera esa liberación antes de intentar abrirla de nuevo.
+- Si la resolución alta no está disponible, se intenta automáticamente una
+  resolución media compatible con más dispositivos.
+- El botón `+` del historial vuelve a la instancia de cámara que abrió esa
+  pantalla. Esto evita que la vista quede cargando por reemplazar la pila de
+  navegación.
+- El splash usa un fondo negro y muestra únicamente el logotipo rodeado por
+  un indicador de progreso. Los textos solo aparecen si ocurre un error real.
+- Ajustes tiene una interfaz oscura de tarjetas, sin degradados ni opciones
+  ficticias. Expone información del modelo, permisos, privacidad, datos
+  técnicos, términos, licencias y datos de la aplicación.
+- Los consejos de precisión usan iconos Material y texto directo, sin emojis
+  ni efectos de brillo decorativos.
+- La suite automatizada contiene ocho pruebas para preprocesamiento, splash,
+  reintento, navegación Historial → Cámara, estructura visual de Ajustes,
+  recarga del filtro activo y conservación del estado ante un fallo de SQLite.
 
-## Historia de cambios recientes
+## Alcance
 
-1. Rediseño de splash screen con logo, animación y fondo degradado oscuro.
-2. Integración del modelo TFLite y corrección de rutas de etiquetas.
-3. Ajuste del pipeline para que el app cargue `assets/models/labels.txt` correctamente.
-4. Inclusión de iconos e imágenes de branding para la app.
-5. Validación del entrenamiento automático y exportación del modelo.
-6. Actualización de la documentación para reflejar el estado real del proyecto.
+- Android es la plataforma principal de validación.
+- iOS está preparado a nivel de código y permisos, pero requiere compilarse y
+  probarse desde macOS.
+- La aplicación es offline-first: no necesita backend para capturar, predecir
+  ni guardar el historial.
+- El entrenamiento del modelo está separado de los recursos empaquetados en
+  la aplicación.
 
-## Descripción del proyecto
+## Estructura
 
-CUAC es una aplicación móvil que ayuda a identificar instrumentos de laboratorio mediante la cámara del dispositivo y un modelo de aprendizaje automático local.
+```text
+lib/
+├── config/       Configuración y tema
+├── models/       Entidades de predicción e historial
+├── providers/    Estado y coordinación de casos de uso
+├── screens/      Pantallas Flutter
+└── services/     Cámara, TFLite, imágenes y SQLite
 
-La app es ideal para estudiantes, docentes y técnicos que quieran reconocer rápidamente equipos como:
-- Microscopios
-- Probetas
-- Matraces
-- Pipetas
-- Vasos de precipitado
-- Buretas
-- Embudos
-- Pinzas
-- Gradillas
-- Crisoles
+assets/
+├── imagenes/     Branding usado por Flutter
+└── models/       Solo el modelo TFLite y sus etiquetas
 
-## ¿Qué hace la aplicación?
+ml/
+├── data/         Dataset organizado por clase
+├── artifacts/    Modelos, métricas y archivos exportados
+├── dataset.py    Preparación, validación y auditoría de imágenes
+├── train_model.py
+├── run_pipeline.py
+└── requirements.txt
+```
 
-- Inicializa un modelo TFLite al arrancar.
-- Pide permisos de cámara y prepara la captura.
-- Captura imágenes mediante la cámara nativa.
-- Procesa la imagen y la envía al modelo ML.
-- Muestra resultados de clasificación con porcentajes de confianza.
-- Guarda el historial de escaneos en SQLite.
-- Permite revisar y gestionar registros guardados.
+No existe un servicio backend. Si en el futuro se necesitan cuentas,
+sincronización o administración remota, debe añadirse como un proyecto
+independiente y no mezclarse con `lib/` ni con `ml/`.
 
-## Arquitectura del proyecto
+## Cómo funciona la aplicación
 
-### Carpetas clave
+```text
+Arranque nativo negro
+        ↓
+Splash: carga del modelo TensorFlow Lite
+        ↓
+Cámara: permiso, vista previa y captura
+        ↓
+Preprocesamiento RGB 224×224
+        ↓
+Inferencia local y resultados ordenados por confianza
+        ↓
+Guardado opcional en SQLite e historial local
+```
 
-- `lib/config/` — configuración global, rutas y constantes.
-- `lib/services/` — servicios para ML, cámara, base de datos e imagen.
-- `lib/providers/` — lógica de estado con Riverpod.
-- `lib/screens/` — pantallas del usuario.
-- `lib/models/` — entidades de datos.
-- `lib/widgets/` — componentes de UI reutilizables.
-- `assets/models/` — modelo y etiquetas.
-- `assets/imagenes/` — logo, iconos y otros recursos.
+Responsabilidades principales:
 
-### Principales tecnologías
+| Componente | Responsabilidad |
+| --- | --- |
+| `lib/screens/` | Interfaz, navegación y estados visibles para el usuario. |
+| `lib/providers/providers.dart` | Coordinación entre pantallas, servicios y estados asíncronos. |
+| `lib/services/camera_service.dart` | Permisos, selección, apertura, captura y liberación de cámara. |
+| `lib/services/tflite_service.dart` | Carga del modelo y ejecución de inferencias locales. |
+| `lib/services/model_image_preprocessor.dart` | Conversión de imágenes al tensor RGB esperado por el modelo. |
+| `lib/services/database_service.dart` | Persistencia SQLite del historial y sus estadísticas. |
+| `lib/services/image_processing_service.dart` | Validación, preparación y almacenamiento de capturas. |
 
-- Flutter 3.x + Dart
-- `flutter_riverpod` / `riverpod`
-- `go_router`
-- `camera`
-- `permission_handler`
-- `tflite_flutter`
-- `sqflite`
-- `flutter_image_compress`
-- `image`
+El código central contiene documentación en español sobre responsabilidades,
+contratos, estados y decisiones no evidentes. Se evita comentar instrucciones
+triviales cuando el propio nombre del método ya expresa claramente su función.
 
-## Flujo de funcionamiento
+## Ejecutar la aplicación
 
-1. `SplashScreen` carga el modelo y verifica permisos.
-2. El usuario abre la cámara y captura una imagen.
-3. La app procesa la imagen para adaptarla al modelo.
-4. `TFLiteService` ejecuta la inferencia.
-5. Se muestra la predicción principal y posibles alternativas.
-6. El usuario puede guardar el resultado en el historial.
-7. El historial puede filtrarse y revisarse en detalle.
+Requisitos:
 
-## Modelos y assets actuales
+- Flutter compatible con Dart 3.7 o posterior.
+- Android SDK y un dispositivo o emulador con cámara.
+- Al menos 3 GB libres para una compilación que incluya varias arquitecturas.
 
-### Archivos integrados
+```powershell
+flutter pub get
+flutter analyze
+flutter test
+flutter run
+```
+
+Si el equipo tiene poco espacio y el destino es un teléfono Android moderno,
+se puede compilar únicamente ARM64:
+
+```powershell
+flutter build apk --debug --target-platform android-arm64
+```
+
+## Identidad y firma Android
+
+El identificador definitivo configurado en las plataformas es
+`com.ebassk.cuac`.
+
+La firma release usa estos archivos privados, excluidos de Git:
+
+- `android/app/cuac-upload-keystore.jks`
+- `android/key.properties`
+
+El certificado público está en `android/upload_certificate.pem`. Para generar
+una clave nueva en otro proyecto:
+
+```powershell
+powershell -ExecutionPolicy Bypass `
+  -File scripts\generate_android_upload_key.ps1 `
+  -KeytoolPath "$env:JAVA_HOME\bin\keytool.exe"
+```
+
+La clave actual ya firma correctamente el APK mediante los esquemas v1 y v2.
+Se deben respaldar juntos el keystore y `key.properties` fuera del equipo. Si
+se pierde la clave de subida, no debe reemplazarse silenciosamente por otra.
+
+```powershell
+flutter build apk --release --target-platform android-arm64
+```
+
+El flujo esperado es:
+
+```text
+Splash → Cámara → Predicción → Confirmar/guardar → Historial → Detalle
+                   ↑                         ↓
+                   └────── Nuevo escaneo ───┘
+```
+
+La imagen solo se copia al almacenamiento permanente cuando el usuario pulsa
+`Guardar`. Al eliminar un registro también se elimina su archivo asociado.
+
+## Pipeline de machine learning
+
+Se recomienda Python 3.10–3.12 en un entorno virtual dedicado.
+
+```powershell
+python -m venv .venv-ml
+.venv-ml\Scripts\python -m pip install -r ml\requirements.txt
+.venv-ml\Scripts\python ml\dataset.py validate
+.venv-ml\Scripts\python ml\dataset.py audit
+.venv-ml\Scripts\python ml\run_pipeline.py
+```
+
+`run_pipeline.py` valida el dataset, ejecuta el entrenamiento y publica
+únicamente estos archivos en la aplicación:
 
 - `assets/models/instrument_model.tflite`
 - `assets/models/labels.txt`
-- `assets/models/class_mapping.json`
 
-### Clases soportadas
+La auditoría genera `dataset_audit.json` y un `split_manifest.json`
+reproducible. El entrenamiento conserva imágenes duplicadas en un único
+split y genera métricas por clase, matriz de confusión y una comprobación de
+paridad entre Keras y el TFLite exportado. El estado actual del dataset está
+resumido en `ml/DATASET_REPORT.md`.
 
-1. Microscopio
-2. Probeta
-3. Matraces
-4. Pipetas
-5. Vasos de precipitado
-6. Buretas
-7. Embudos
-8. Pinzas
-9. Gradillas
-10. Crisoles
+Para publicar artefactos ya entrenados:
 
-## Scripts de entrenamiento
-
-### `train_model_v2.py`
-
-Entrena un modelo mediante TensorFlow/Keras usando el dataset disponible en `dataset/`.
-
-### `setup_ml.py`
-
-Copia el resultado del entrenamiento al proyecto Flutter:
-- `output/instrument_model.tflite` → `assets/models/instrument_model.tflite`
-- `output/labels.txt` → `assets/models/labels.txt`
-
-## Cómo entrenar y actualizar el modelo
-
-```bash
-pip install -r requirements_ml.txt
-python train_model_v2.py
-python setup_ml.py
-flutter clean
-flutter pub get
-flutter run
+```powershell
+.venv-ml\Scripts\python ml\run_pipeline.py --copy-only
 ```
 
-## Instalación y ejecución
+El contrato de entrada del modelo es RGB `224x224`, `float32`, con valores
+entre `0` y `1`. El pipeline nuevo incluye dentro del modelo la normalización
+específica requerida por MobileNetV2.
 
-### Requisitos
+## Validación antes de una entrega
 
-- Flutter SDK >= 3.0.0
-- Dispositivo Android/iOS o emulador
-- Python 3.9+ para el entrenamiento opcional
-
-### Pasos
-
-```bash
-git clone https:
-cd lab_instrument_identifier
-flutter pub get
-flutter run
+```powershell
+dart format --output=none --set-exit-if-changed lib test
+dart analyze lib test
+flutter test
+flutter build apk --release --target-platform android-arm64
 ```
 
-### Build
+Antes de distribuir una versión release también se debe:
 
-```bash
-flutter build apk --release
-flutter build appbundle --release
+1. Respaldar la clave de subida fuera del equipo.
+2. Validar cámara, inferencia, historial y eliminación en un dispositivo real.
+3. Evaluar el modelo con fotografías externas que no estén en el dataset.
+
+La validación automatizada no sustituye la prueba en hardware. En un teléfono
+real se debe verificar especialmente este recorrido:
+
+```text
+Cámara → Historial → botón + → vista previa activa
 ```
 
-## Problemas comunes
+## Clases actuales
 
-### Modelo no carga
-
-- Verifica que `assets/models/instrument_model.tflite` exista.
-- Verifica que `assets/models/labels.txt` exista.
-- Asegúrate de que `pubspec.yaml` incluya `assets/models/`.
-
-### Error de permisos
-
-- Permite la cámara en el dispositivo.
-- Revisa `AndroidManifest.xml` para el permiso de cámara.
-
-### Error de inferencia
-
-- Revisa rutas en `lib/config/app_config.dart`.
-- Asegúrate de que el archivo `labels.txt` está en `assets/models/`.
-
-## Contribuir
-
-1. Haz fork del proyecto.
-2. Crea una rama nueva.
-3. Realiza tus cambios.
-4. Envía un pull request.
-
-## Licencia
-
-MIT License.
-
-## Autor
-
-**Sebastian caceres osuna "EBASSK"** - sebas25caceres@gmail.com
+1. Buretas
+2. Crisoles
+3. Embudos
+4. Gradillas
+5. Matraces
+6. Microscopio
+7. Pinzas
+8. Pipetas
+9. Probeta
+10. Vasos de precipitado

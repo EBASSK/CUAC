@@ -1,0 +1,7 @@
+# Python 3.10-3.12 recomendado.
+# Genera un lock para el entorno de CI después de validar estas restricciones.
+matplotlib>=3.8,<4
+numpy>=1.24,<3
+Pillow>=10,<13
+scikit-learn>=1.3,<2
+tensorflow>=2.13,<2.21

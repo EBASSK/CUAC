@@ -1,0 +1,156 @@
+{
+  "total_images": 133,
+  "class_counts": {
+    "buretas": 12,
+    "crisoles": 11,
+    "embudos": 15,
+    "gradillas": 12,
+    "matraces": 15,
+    "microscopio": 12,
+    "pinzas": 14,
+    "pipetas": 16,
+    "probeta": 14,
+    "vasos_precipitado": 12
+  },
+  "invalid_images": [],
+  "low_resolution_images": [
+    "data/instruments/buretas/images (1).jpg",
+    "data/instruments/buretas/images (2).jpg",
+    "data/instruments/buretas/images (5).jpg",
+    "data/instruments/buretas/images (7).jpg",
+    "data/instruments/buretas/images.jpg",
+    "data/instruments/crisoles/images (2).jpg",
+    "data/instruments/crisoles/images.jpg",
+    "data/instruments/embudos/images (1).jpg",
+    "data/instruments/embudos/images (3).jpg",
+    "data/instruments/embudos/images.jpg",
+    "data/instruments/gradillas/gradilla.jpg",
+    "data/instruments/gradillas/images (2).jpg",
+    "data/instruments/gradillas/images (3).jpg",
+    "data/instruments/gradillas/images (4).jpg",
+    "data/instruments/gradillas/images (5).jpg",
+    "data/instruments/matraces/images (1).jpg",
+    "data/instruments/matraces/images (3).jpg",
+    "data/instruments/matraces/images (5).jpg",
+    "data/instruments/matraces/images (6).jpg",
+    "data/instruments/matraces/images (7).jpg",
+    "data/instruments/matraces/images.jpg",
+    "data/instruments/microscopio/images (6).jpg",
+    "data/instruments/microscopio/images (9).jpg",
+    "data/instruments/pinzas/pinza_laboratorio1.jpg",
+    "data/instruments/pipetas/images (1).jpg",
+    "data/instruments/pipetas/images (10).jpg",
+    "data/instruments/pipetas/images (2).jpg",
+    "data/instruments/pipetas/images (3).jpg",
+    "data/instruments/pipetas/images (4).jpg",
+    "data/instruments/pipetas/images (5).jpg",
+    "data/instruments/pipetas/images (7).jpg",
+    "data/instruments/probeta/images (1).jpg",
+    "data/instruments/probeta/images (11).jpg",
+    "data/instruments/probeta/images (2).jpg",
+    "data/instruments/probeta/images (3).jpg",
+    "data/instruments/probeta/images (4).jpg",
+    "data/instruments/probeta/images (5).jpg",
+    "data/instruments/probeta/images (7).jpg",
+    "data/instruments/vasos_precipitado/beaker.jpg",
+    "data/instruments/vasos_precipitado/images (1).jpg",
+    "data/instruments/vasos_precipitado/images (3).jpg",
+    "data/instruments/vasos_precipitado/images (4).jpg",
+    "data/instruments/vasos_precipitado/images (8).jpg",
+    "data/instruments/vasos_precipitado/images.jpg"
+  ],
+  "exact_duplicate_groups": [],
+  "cross_class_exact_duplicate_groups": [],
+  "near_duplicate_pairs": [
+    {
+      "left": "data/instruments/buretas/24.231.11.jpg",
+      "right": "data/instruments/pipetas/images (1).jpg",
+      "distance": 2,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/buretas/24.231.11.jpg",
+      "right": "data/instruments/probeta/images (6).jpg",
+      "distance": 2,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/buretas/24.231.11.jpg",
+      "right": "data/instruments/vasos_precipitado/images (3).jpg",
+      "distance": 4,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/buretas/bureta-1.jpg",
+      "right": "data/instruments/pipetas/pipeta-volumetrica-vidrio-certificado-fabrica-lote-din-iso-648-800x800.png",
+      "distance": 3,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/embudos/images (1).jpg",
+      "right": "data/instruments/probeta/177.303.01.jpg",
+      "distance": 3,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/pipetas/images (1).jpg",
+      "right": "data/instruments/pipetas/images.jpg",
+      "distance": 4,
+      "cross_class": false
+    },
+    {
+      "left": "data/instruments/pipetas/images (1).jpg",
+      "right": "data/instruments/probeta/images (6).jpg",
+      "distance": 0,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/pipetas/images (1).jpg",
+      "right": "data/instruments/vasos_precipitado/images (3).jpg",
+      "distance": 2,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/pipetas/images (6).jpg",
+      "right": "data/instruments/pipetas/pipeta-volumetrica-vidrio-certificado-fabrica-lote-din-iso-648-800x800.png",
+      "distance": 4,
+      "cross_class": false
+    },
+    {
+      "left": "data/instruments/pipetas/images.jpg",
+      "right": "data/instruments/probeta/images (6).jpg",
+      "distance": 4,
+      "cross_class": true
+    },
+    {
+      "left": "data/instruments/probeta/177.303.01.jpg",
+      "right": "data/instruments/probeta/images (3).jpg",
+      "distance": 3,
+      "cross_class": false
+    },
+    {
+      "left": "data/instruments/probeta/177.303.01.jpg",
+      "right": "data/instruments/probeta/images.jpg",
+      "distance": 3,
+      "cross_class": false
+    },
+    {
+      "left": "data/instruments/probeta/images (3).jpg",
+      "right": "data/instruments/probeta/images.jpg",
+      "distance": 0,
+      "cross_class": false
+    },
+    {
+      "left": "data/instruments/probeta/images (6).jpg",
+      "right": "data/instruments/vasos_precipitado/images (3).jpg",
+      "distance": 2,
+      "cross_class": true
+    }
+  ],
+  "near_duplicate_distance": 4,
+  "split_counts": {
+    "train": 79,
+    "validation": 27,
+    "test": 27
+  }
+}

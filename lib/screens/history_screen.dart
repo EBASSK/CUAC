@@ -1,29 +1,154 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../models/scan_history.dart';
 import '../providers/providers.dart';
 
+/// Pantalla que consulta y presenta los escaneos almacenados localmente.
+///
+/// Permite filtrar la colección, marcar favoritos, abrir el detalle, eliminar
+/// registros y regresar a la cámara para iniciar una nueva captura.
 class HistoryScreen extends ConsumerStatefulWidget {
-  const HistoryScreen({Key? key}) : super(key: key);
+  const HistoryScreen({
+    super.key,
+    this.loadOnStart = true,
+  });
+
+  /// Permite omitir la carga automática en pruebas o usos controlados.
+  final bool loadOnStart;
 
   @override
   ConsumerState<HistoryScreen> createState() => _HistoryScreenState();
 }
 
 class _HistoryScreenState extends ConsumerState<HistoryScreen> {
-  String _filterType = 'all'; // all, favorites, today, week
+  // Clave del filtro visible: todos, favoritos, hoy o esta semana.
+  String _filterType = 'all';
+
+  /// Repite la consulta correspondiente al filtro que permanece seleccionado.
+  Future<void> _loadActiveFilter() {
+    final notifier = ref.read(historyNotifierProvider.notifier);
+    switch (_filterType) {
+      case 'favorites':
+        return notifier.loadFavorites();
+      case 'today':
+        return notifier.loadTodayScans();
+      case 'week':
+        return notifier.loadWeekScans();
+      case 'all':
+      default:
+        return notifier.loadHistory();
+    }
+  }
+
+  /// Cambia la selección visible y carga inmediatamente su consulta.
+  Future<void> _selectFilter(String filterType) async {
+    setState(() => _filterType = filterType);
+    await _loadActiveFilter();
+  }
+
+  /// Recarga el filtro tras modificar un favorito confirmado por SQLite.
+  Future<void> _toggleFavorite(String scanId) async {
+    final updated =
+        await ref.read(historyNotifierProvider.notifier).toggleFavorite(scanId);
+    if (!mounted) return;
+
+    if (!updated) {
+      _showOperationError('No se pudo actualizar el favorito.');
+      return;
+    }
+
+    await _loadActiveFilter();
+  }
+
+  /// Abre el detalle y actualiza la consulta activa cuando el usuario regresa.
+  Future<void> _openDetail(ScanHistory scan) async {
+    await context.push('/detail/${scan.id}', extra: scan);
+    if (!mounted) return;
+    await _loadActiveFilter();
+  }
+
+  /// Confirma la eliminación y solo recarga cuando la base reporta éxito.
+  Future<void> _confirmDelete(ScanHistory scan) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('¿Eliminar?'),
+        content: const Text('Esta acción no se puede deshacer'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text(
+              'Eliminar',
+              style: TextStyle(color: Colors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    final deleted =
+        await ref.read(historyNotifierProvider.notifier).deleteScan(scan.id);
+    if (!mounted) return;
+
+    if (!deleted) {
+      _showOperationError('No se pudo eliminar el escaneo.');
+      return;
+    }
+
+    await _loadActiveFilter();
+  }
+
+  /// Muestra fallos de escritura sin presentar la operación como completada.
+  void _showOperationError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  /// Regresa a la instancia de cámara que abrió el historial.
+  Future<void> _startNewScan() async {
+    // Normalmente CameraScreen abre el historial con `push`. Al retirar esta
+    // ruta, la espera de navegación termina y esa misma pantalla puede reabrir
+    // la cámara. Usar directamente `go('/camera')` dejaba la espera pendiente
+    // en algunos dispositivos y mantenía la cámara en estado de carga.
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+
+    // Respaldo para el caso excepcional en que el historial se haya abierto
+    // como ruta raíz o mediante un enlace profundo.
+    await ref.read(cameraServiceProvider).dispose();
+    if (mounted) {
+      context.go('/camera');
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    // Cargar historial al abrir
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(historyNotifierProvider.notifier).loadHistory();
-    });
+    if (widget.loadOnStart) {
+      // La lectura se aplaza hasta el primer cuadro para no cambiar un provider
+      // mientras Flutter todavía está construyendo el árbol inicial.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(_loadActiveFilter());
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Riverpod vuelve a construir la pantalla cuando cambia la consulta activa.
     final historyState = ref.watch(historyNotifierProvider);
 
     return Scaffold(
@@ -33,12 +158,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
-            onPressed: () {
-              ref.read(historyNotifierProvider.notifier).loadHistory();
-            },
+            onPressed: () => unawaited(_loadActiveFilter()),
           ),
         ],
       ),
+      // Cada rama representa el estado asíncrono de acceso a la base de datos.
       body: historyState.when(
         idle: () => Center(child: Text('Presiona refresh')),
         loading: () => Center(child: CircularProgressIndicator()),
@@ -61,7 +185,7 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
 
           return Column(
             children: [
-              // FilterChips
+              // Los filtros solicitan al notifier una consulta especializada.
               Padding(
                 padding: EdgeInsets.all(12),
                 child: Wrap(
@@ -70,40 +194,30 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                     FilterChip(
                       label: Text('Todos'),
                       selected: _filterType == 'all',
-                      onSelected: (selected) {
-                        setState(() => _filterType = 'all');
-                        ref.read(historyNotifierProvider.notifier).loadHistory();
-                      },
+                      onSelected: (_) => unawaited(_selectFilter('all')),
                     ),
                     FilterChip(
                       label: Text('Favoritos'),
                       selected: _filterType == 'favorites',
-                      onSelected: (selected) {
-                        setState(() => _filterType = 'favorites');
-                        ref.read(historyNotifierProvider.notifier).loadFavorites();
-                      },
+                      onSelected: (_) => unawaited(
+                        _selectFilter('favorites'),
+                      ),
                     ),
                     FilterChip(
                       label: Text('Hoy'),
                       selected: _filterType == 'today',
-                      onSelected: (selected) {
-                        setState(() => _filterType = 'today');
-                        ref.read(historyNotifierProvider.notifier).loadTodayScans();
-                      },
+                      onSelected: (_) => unawaited(_selectFilter('today')),
                     ),
                     FilterChip(
                       label: Text('Esta semana'),
                       selected: _filterType == 'week',
-                      onSelected: (selected) {
-                        setState(() => _filterType = 'week');
-                        ref.read(historyNotifierProvider.notifier).loadWeekScans();
-                      },
+                      onSelected: (_) => unawaited(_selectFilter('week')),
                     ),
                   ],
                 ),
               ),
-              
-              // Lista de escaneos
+
+              // Lista desplazable de escaneos obtenidos por el filtro activo.
               Expanded(
                 child: ListView.builder(
                   itemCount: scans.length,
@@ -119,38 +233,12 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
                               : Icons.favorite_border,
                           color: Colors.red,
                         ),
-                        onPressed: () {
-                          ref.read(historyNotifierProvider.notifier)
-                              .toggleFavorite(scan.id);
-                        },
+                        onPressed: () => unawaited(
+                          _toggleFavorite(scan.id),
+                        ),
                       ),
-                      onTap: () {
-                        context.push('/detail/${scan.id}', extra: scan);
-                      },
-                      onLongPress: () {
-                        // Eliminar con confirmación
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text('¿Eliminar?'),
-                            content: Text('Esta acción no se puede deshacer'),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: Text('Cancelar'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  ref.read(historyNotifierProvider.notifier)
-                                      .deleteScan(scan.id);
-                                  Navigator.pop(context);
-                                },
-                                child: Text('Eliminar', style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
+                      onTap: () => unawaited(_openDetail(scan)),
+                      onLongPress: () => unawaited(_confirmDelete(scan)),
                     );
                   },
                 ),
@@ -169,9 +257,11 @@ class _HistoryScreenState extends ConsumerState<HistoryScreen> {
           ),
         ),
       ),
+      // Este botón vuelve a la cámara sin crear una segunda instancia de ella.
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.go('/camera'),
-        child: Icon(Icons.add),
+        onPressed: _startNewScan,
+        tooltip: 'Nuevo escaneo',
+        child: const Icon(Icons.add),
       ),
     );
   }

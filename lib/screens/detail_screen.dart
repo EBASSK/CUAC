@@ -7,23 +7,34 @@ import '../models/scan_history.dart';
 import '../providers/providers.dart';
 import '../config/theme.dart';
 
+/// Muestra toda la información de un escaneo guardado en el historial.
+///
+/// Puede recibir el registro ya cargado o recuperarlo por identificador, y
+/// permite actualizar favorito/notas o eliminarlo de la base de datos local.
 class DetailScreen extends ConsumerStatefulWidget {
+  /// Identificador usado para consultar o modificar el registro persistido.
   final String scanId;
+
+  /// Registro opcional pasado desde historial para evitar una consulta extra.
   final ScanHistory? scan;
 
   const DetailScreen({
-    Key? key,
+    super.key,
     required this.scanId,
     this.scan,
-  }) : super(key: key);
+  });
 
   @override
   ConsumerState<DetailScreen> createState() => _DetailScreenState();
 }
 
 class _DetailScreenState extends ConsumerState<DetailScreen> {
+  // Copia local necesaria para reflejar inmediatamente las ediciones.
   ScanHistory? _scan;
   bool _isFavorite = false;
+  String? _loadError;
+
+  /// Controla el campo editable de notas y se libera junto con la pantalla.
   late TextEditingController _notesController;
 
   @override
@@ -33,7 +44,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     _isFavorite = _scan?.isFavorite ?? false;
     _notesController = TextEditingController(text: _scan?.userNotes ?? '');
 
-    // Si no se pasó el scan, cargarlo desde la BD
+    // Si la navegación no entregó el objeto, se recupera desde la base de
+    // datos después del primer cuadro para no modificar estado durante build.
     if (_scan == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _loadScan();
@@ -41,6 +53,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     }
   }
 
+  /// Busca el escaneo por ID y sincroniza el estado editable de la pantalla.
   Future<void> _loadScan() async {
     try {
       final db = ref.read(databaseServiceProvider);
@@ -53,8 +66,9 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         });
       }
     } catch (e) {
-      // Manejar error
-      print('Error cargando scan: $e');
+      if (mounted) {
+        setState(() => _loadError = 'No se pudo cargar el escaneo.');
+      }
     }
   }
 
@@ -66,10 +80,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Mientras no exista registro, la misma zona muestra carga o error.
     if (_scan == null) {
       return Scaffold(
         appBar: AppBar(title: const Text('Detalles')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: _loadError == null
+              ? const CircularProgressIndicator()
+              : Text(_loadError!, textAlign: TextAlign.center),
+        ),
       );
     }
 
@@ -96,10 +115,6 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 child: const Text('Eliminar'),
                 onTap: () => _deleteScan(scan),
               ),
-              PopupMenuItem(
-                child: const Text('Compartir'),
-                onTap: () => _shareScan(scan),
-              ),
             ],
           ),
         ],
@@ -109,22 +124,22 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Imagen del escaneo
+            // Copia procesada que se guardó en el almacenamiento de la app.
             _buildImageSection(scan),
 
             const SizedBox(height: AppTheme.paddingLG),
 
-            // Predicción principal
+            // Resultado principal y porcentaje de confianza.
             _buildPredictionSection(scan),
 
             const SizedBox(height: AppTheme.paddingLG),
 
-            // Información de tiempo
+            // Momento exacto en que se creó el registro.
             _buildTimestampSection(scan),
 
             const SizedBox(height: AppTheme.paddingLG),
 
-            // Top 3 predicciones
+            // Alternativas del modelo, si fueron guardadas con el escaneo.
             if (scan.top3Predictions.isNotEmpty) ...[
               Text(
                 'Otras predicciones',
@@ -135,7 +150,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
               const SizedBox(height: AppTheme.paddingLG),
             ],
 
-            // Notas
+            // Notas editables asociadas al registro local.
             Text(
               'Notas',
               style: Theme.of(context).textTheme.titleMedium,
@@ -154,7 +169,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
             const SizedBox(height: AppTheme.paddingLG),
 
-            // Botones de acción
+            // Persistencia explícita para evitar guardar mientras se escribe.
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -166,7 +181,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
             const SizedBox(height: AppTheme.paddingMD),
 
-            // Información técnica
+            // Datos avanzados plegados para no recargar la vista principal.
             _buildTechnicalInfo(scan),
           ],
         ),
@@ -174,6 +189,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Muestra la copia procesada si todavía existe en su ruta persistente.
   Widget _buildImageSection(ScanHistory scan) {
     return Container(
       width: double.infinity,
@@ -210,6 +226,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Resume la clase detectada y representa visualmente su confianza.
   Widget _buildPredictionSection(ScanHistory scan) {
     return Card(
       child: Padding(
@@ -231,8 +248,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                     children: [
                       Text(
                         scan.predictedInstrument,
-                        style:
-                            Theme.of(context).textTheme.headlineSmall,
+                        style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       const SizedBox(height: 4),
                       Container(
@@ -246,12 +262,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                         ),
                         child: Text(
                           'Categoría',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(
-                                color: AppTheme.mediumGrey,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: AppTheme.mediumGrey,
+                                  ),
                         ),
                       ),
                     ],
@@ -262,15 +276,12 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   height: 80,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: _getConfidenceColor(scan.confidence),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _getConfidenceColor(scan.confidence)
-                            .withOpacity(0.3),
-                        blurRadius: 10,
-                        spreadRadius: 2,
-                      ),
-                    ],
+                    color: _getConfidenceColor(scan.confidence)
+                        .withValues(alpha: 0.08),
+                    border: Border.all(
+                      color: _getConfidenceColor(scan.confidence),
+                      width: 3,
+                    ),
                   ),
                   child: Center(
                     child: Column(
@@ -278,20 +289,20 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       children: [
                         Text(
                           '${scan.confidencePercentage}%',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleLarge
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    color: _getConfidenceColor(scan.confidence),
+                                    fontWeight: FontWeight.bold,
+                                  ),
                         ),
                         Text(
                           'Confianza',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: Colors.white),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                         ),
                       ],
                     ),
@@ -305,6 +316,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Formatea la fecha persistida con día, mes, año y hora local.
   Widget _buildTimestampSection(ScanHistory scan) {
     final formatter = DateFormat('dd/MM/yyyy HH:mm:ss');
 
@@ -340,6 +352,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Lista las predicciones secundarias, excluyendo la primera ya destacada.
   Widget _buildAlternativePredictions(ScanHistory scan) {
     return Column(
       children: scan.top3Predictions.skip(1).map((prediction) {
@@ -370,9 +383,11 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                   ),
                 ),
                 Chip(
-                  label: Text('${prediction.confidence.toStringAsFixed(0)}%'),
+                  label: Text(
+                    '${(prediction.confidence * 100).toStringAsFixed(0)}%',
+                  ),
                   backgroundColor: _getConfidenceColor(prediction.confidence)
-                      .withOpacity(0.2),
+                      .withValues(alpha: 0.2),
                 ),
               ],
             ),
@@ -382,6 +397,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Agrupa metadatos de diagnóstico que normalmente no necesita el usuario.
   Widget _buildTechnicalInfo(ScanHistory scan) {
     return ExpansionTile(
       title: const Text('Información técnica'),
@@ -401,7 +417,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                 'Confianza (decimal)',
                 scan.confidence.toStringAsFixed(4),
               ),
-              _buildTechItem('Total de predicciones', '${scan.top3Predictions.length}'),
+              _buildTechItem(
+                  'Total de predicciones', '${scan.top3Predictions.length}'),
             ],
           ),
         ),
@@ -409,6 +426,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Fila seleccionable para copiar identificadores, rutas y valores técnicos.
   Widget _buildTechItem(String label, String value) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -436,28 +454,45 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     );
   }
 
+  /// Actualiza el favorito persistido y luego sincroniza la copia visible.
   Future<void> _toggleFavorite(ScanHistory scan) async {
-    await ref
+    final updated = await ref
         .read(historyNotifierProvider.notifier)
         .toggleFavorite(scan.id);
 
-    setState(() => _isFavorite = !_isFavorite);
+    if (!mounted) return;
+
+    if (!updated) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No se pudo actualizar el favorito.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isFavorite = !_isFavorite;
+      _scan = scan.copyWith(isFavorite: _isFavorite);
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _isFavorite ? '⭐ Agregado a favoritos' : '✓ Removido de favoritos',
+          _isFavorite ? 'Agregado a favoritos' : 'Removido de favoritos',
         ),
       ),
     );
   }
 
+  /// Solicita confirmación antes de borrar y vuelve al historial al terminar.
   Future<void> _deleteScan(ScanHistory scan) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Eliminar escaneo'),
-        content: const Text('¿Estás seguro de que deseas eliminar este escaneo?'),
+        content:
+            const Text('¿Estás seguro de que deseas eliminar este escaneo?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -465,38 +500,49 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Eliminar', style: TextStyle(color: AppTheme.errorColor)),
+            child: const Text('Eliminar',
+                style: TextStyle(color: AppTheme.errorColor)),
           ),
         ],
       ),
     );
 
     if (confirm == true && mounted) {
-      await ref.read(historyNotifierProvider.notifier).deleteScan(scan.id);
+      // Se conserva el messenger antes de retirar la ruta para poder mostrar la
+      // confirmación en el Scaffold que queda visible.
+      final messenger = ScaffoldMessenger.of(context);
+      final deleted =
+          await ref.read(historyNotifierProvider.notifier).deleteScan(scan.id);
+      if (!mounted) return;
+
+      if (!deleted) {
+        messenger.showSnackBar(
+          const SnackBar(content: Text('No se pudo eliminar el escaneo.')),
+        );
+        return;
+      }
+
       context.pop();
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✓ Escaneo eliminado')),
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Escaneo eliminado')),
       );
     }
   }
 
-  void _shareScan(ScanHistory scan) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Compartir: próximamente')),
-    );
-  }
-
+  /// Crea una copia con las notas actuales y la actualiza en SQLite.
   Future<void> _saveNotes(ScanHistory scan) async {
     final updated = scan.copyWith(userNotes: _notesController.text);
     await ref.read(databaseServiceProvider).updateScan(updated);
 
     if (mounted) {
+      setState(() => _scan = updated);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('✓ Notas guardadas')),
+        const SnackBar(content: Text('Notas guardadas')),
       );
     }
   }
 
+  /// Verifica de forma segura si la imagen sigue disponible en almacenamiento.
   bool _imageFileExists(String path) {
     try {
       return File(path).existsSync();
@@ -505,6 +551,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
     }
   }
 
+  /// Asigna un color semántico según la confianza normalizada del modelo.
   Color _getConfidenceColor(double confidence) {
     if (confidence >= 0.8) return AppTheme.successColor;
     if (confidence >= 0.6) return AppTheme.warningColor;

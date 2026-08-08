@@ -11,53 +11,46 @@ import 'screens/history_screen.dart';
 import 'screens/detail_screen.dart';
 import 'screens/settings_screen.dart';
 
-// Punto de entrada principal de la aplicación Flutter
-// Se ejecuta antes de que se inflen los widgets para inicializar servicios
-void main() async {
-  // Asegura que Flutter esté inicializado antes de cualquier operación asíncrona
-  // Esto es crucial para acceder a plugins nativos y servicios del sistema
-  WidgetsFlutterBinding.ensureInitialized();
-
-  // Inicializa la configuración global de la aplicación
-  // Incluye configuración de permisos, rutas de almacenamiento, etc.
-  await AppConfig.initialize();
-
-  // Envuelve la aplicación con ProviderScope para habilitar Riverpod
-  // Esto permite la inyección de dependencias y gestión de estado global
+void main() {
+  // ProviderScope crea el contenedor global donde Riverpod conserva y comparte
+  // el estado de los servicios durante toda la ejecución de la aplicación.
   runApp(const ProviderScope(child: MyApp()));
 }
 
-// Widget raíz de la aplicación
-// ConsumerWidget permite acceder a los providers de Riverpod
+/// Widget raíz de CUAC.
+///
+/// Se implementa como [ConsumerWidget] para que el árbol principal pueda leer
+/// proveedores de Riverpod cuando la configuración global lo requiera.
 class MyApp extends ConsumerWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    // Configuración del router declarativo con GoRouter
-    // Define todas las rutas de navegación de la aplicación
+    // GoRouter concentra la navegación declarativa y evita que cada pantalla
+    // tenga que conocer cómo construir el resto de destinos de la aplicación.
     final router = GoRouter(
-      // Ruta inicial: pantalla de splash para inicialización
+      // El splash es la entrada porque allí se preparan los recursos necesarios
+      // antes de habilitar el flujo principal de captura.
       initialLocation: '/',
       routes: [
-        // Pantalla de bienvenida y inicialización de servicios
+        // Inicialización del modelo local y transición hacia la cámara.
         GoRoute(
           path: '/',
           builder: (context, state) => const SplashScreen(),
         ),
-        // Pantalla de captura de imágenes con la cámara
+        // Vista principal para encuadrar y capturar el instrumento.
         GoRoute(
           path: '/camera',
           builder: (context, state) => const CameraScreen(),
         ),
-        // Pantalla de resultados del análisis de IA
-        // Recibe la ruta de la imagen capturada como parámetro extra
+        // La ruta de la fotografía se transmite mediante `extra` porque es un
+        // dato temporal del flujo y no necesita formar parte de la URL.
         GoRoute(
           path: '/results',
           builder: (context, state) {
-            // Extrae la ruta de la imagen del estado de navegación
+            // La conversión admite null para poder responder de forma segura si
+            // otro punto de la aplicación abre esta ruta sin una fotografía.
             final imagePath = state.extra as String?;
-            // Validación: si no hay imagen, muestra error
             if (imagePath == null || imagePath.isEmpty) {
               return const Scaffold(
                 body: Center(
@@ -65,14 +58,16 @@ class MyApp extends ConsumerWidget {
                 ),
               );
             }
-            // Pasa la imagen a la pantalla de resultados
             return ResultsScreen(imagePath: imagePath);
           },
         ),
+        // Lista persistida de identificaciones realizadas anteriormente.
         GoRoute(
           path: '/history',
           builder: (context, state) => const HistoryScreen(),
         ),
+        // El identificador permite recuperar el registro desde SQLite. `extra`
+        // evita otra consulta cuando la pantalla anterior ya posee el objeto.
         GoRoute(
           path: '/detail/:id',
           builder: (context, state) {
@@ -81,11 +76,14 @@ class MyApp extends ConsumerWidget {
             return DetailScreen(scanId: id, scan: scan);
           },
         ),
+        // Preferencias e información técnica de la aplicación.
         GoRoute(
           path: '/settings',
           builder: (context, state) => const SettingsScreen(),
         ),
       ],
+      // Cualquier ruta desconocida termina en una vista recuperable, desde la
+      // que el usuario puede volver a ejecutar la inicialización normal.
       errorBuilder: (context, state) => Scaffold(
         appBar: AppBar(title: const Text('Error')),
         body: Center(
@@ -106,6 +104,8 @@ class MyApp extends ConsumerWidget {
       ),
     );
 
+    // MaterialApp.router enlaza GoRouter con Material 3 y selecciona el tema
+    // claro u oscuro según la preferencia configurada en el sistema operativo.
     return MaterialApp.router(
       title: AppConfig.appName,
       theme: AppTheme.lightTheme,
