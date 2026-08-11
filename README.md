@@ -17,16 +17,23 @@ actualización visual orientada a dispositivos móviles reales:
 - El botón `+` del historial vuelve a la instancia de cámara que abrió esa
   pantalla. Esto evita que la vista quede cargando por reemplazar la pila de
   navegación.
+- El historial conserva visibles sus cuatro filtros (`Todos`, `Favoritos`,
+  `Hoy` y `Esta semana`) mientras carga, cuando no hay resultados y si ocurre
+  un error. Su interfaz adapta fondos, tarjetas, texto y controles al tema activo.
 - El splash usa un fondo negro y muestra únicamente el logotipo rodeado por
   un indicador de progreso. Los textos solo aparecen si ocurre un error real.
-- Ajustes tiene una interfaz oscura de tarjetas, sin degradados ni opciones
-  ficticias. Expone información del modelo, permisos, privacidad, datos
-  técnicos, términos, licencias y datos de la aplicación.
+- Ajustes tiene una interfaz de tarjetas adaptable al tema, sin degradados ni
+  opciones ficticias. Expone información del modelo, permisos, privacidad,
+  datos técnicos, términos, licencias y datos de la aplicación.
+- El selector `Apariencia` permite usar el tema del sistema, claro u oscuro.
+  La elección se guarda localmente en el dispositivo y no requiere backend.
+  Cámara y Splash permanecen negros por diseño para priorizar la vista previa
+  y mantener un arranque visualmente consistente.
 - Los consejos de precisión usan iconos Material y texto directo, sin emojis
   ni efectos de brillo decorativos.
-- La suite automatizada contiene ocho pruebas para preprocesamiento, splash,
-  reintento, navegación Historial → Cámara, estructura visual de Ajustes,
-  recarga del filtro activo y conservación del estado ante un fallo de SQLite.
+- La suite automatizada contiene 19 pruebas para preprocesamiento, splash,
+  navegación, filtros vacíos, fallos de SQLite, persistencia de apariencia,
+  estabilidad del enrutador y superficies claras u oscuras.
 
 ## Alcance
 
@@ -212,6 +219,20 @@ real se debe verificar especialmente este recorrido:
 ```text
 Cámara → Historial → botón + → vista previa activa
 ```
+
+También se debe comprobar manualmente el historial y la apariencia:
+
+1. Abrir el historial sin registros y confirmar que siguen disponibles los
+   filtros de periodo y de tipo.
+2. Seleccionar `Hoy` y `Esta semana` sin resultados, alternando entre `Todos`
+   y `Favoritos`, y verificar que los filtros no desaparecen.
+3. Desde Ajustes, cambiar `Apariencia` entre `Sistema`, `Claro` y `Oscuro` y
+   confirmar que Historial, Resultados, Detalle y Ajustes se adaptan.
+4. Cerrar y volver a abrir la aplicación para comprobar que la elección se
+   conserva. En `Sistema`, cambiar el tema del dispositivo y verificar que la
+   aplicación lo sigue.
+5. Confirmar que Cámara y Splash continúan negros en las tres opciones, ya que
+   esas dos pantallas mantienen esa apariencia intencionalmente.
 
 ## Clases actuales
 

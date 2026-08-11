@@ -191,12 +191,15 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   /// Muestra la copia procesada si todavía existe en su ruta persistente.
   Widget _buildImageSection(ScanHistory scan) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Container(
+      key: const Key('detailImageSurface'),
       width: double.infinity,
       height: 300,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        color: AppTheme.lightGrey,
+        color: colorScheme.surfaceContainerHighest,
         image: _imageFileExists(scan.imagePath)
             ? DecorationImage(
                 image: FileImage(File(scan.imagePath)),
@@ -228,6 +231,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   /// Resume la clase detectada y representa visualmente su confianza.
   Widget _buildPredictionSection(ScanHistory scan) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(AppTheme.paddingMD),
@@ -252,19 +257,20 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
                       ),
                       const SizedBox(height: 4),
                       Container(
+                        key: const Key('detailCategoryBadge'),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
                         decoration: BoxDecoration(
-                          color: AppTheme.lightGrey,
+                          color: colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(4),
                         ),
                         child: Text(
                           'Categoría',
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: AppTheme.mediumGrey,
+                                    color: colorScheme.onSurfaceVariant,
                                   ),
                         ),
                       ),
@@ -319,6 +325,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
   /// Formatea la fecha persistida con día, mes, año y hora local.
   Widget _buildTimestampSection(ScanHistory scan) {
     final formatter = DateFormat('dd/MM/yyyy HH:mm:ss');
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Card(
       child: Padding(
@@ -327,7 +334,7 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           children: [
             Icon(
               Icons.schedule,
-              color: AppTheme.primaryColor,
+              color: colorScheme.primary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -354,14 +361,18 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   /// Lista las predicciones secundarias, excluyendo la primera ya destacada.
   Widget _buildAlternativePredictions(ScanHistory scan) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Column(
       children: scan.top3Predictions.skip(1).map((prediction) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 12),
           child: Container(
+            key: ValueKey('detailAlternative-${prediction.name}'),
             padding: const EdgeInsets.all(AppTheme.paddingMD),
             decoration: BoxDecoration(
-              border: Border.all(color: AppTheme.lightGrey),
+              color: colorScheme.surfaceContainerLow,
+              border: Border.all(color: colorScheme.outlineVariant),
               borderRadius: BorderRadius.circular(AppTheme.radiusMD),
             ),
             child: Row(
@@ -399,11 +410,14 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   /// Agrupa metadatos de diagnóstico que normalmente no necesita el usuario.
   Widget _buildTechnicalInfo(ScanHistory scan) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return ExpansionTile(
+      key: const Key('detailTechnicalInfo'),
       title: const Text('Información técnica'),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(AppTheme.radiusMD),
-        side: const BorderSide(color: AppTheme.lightGrey),
+        side: BorderSide(color: colorScheme.outlineVariant),
       ),
       children: [
         Padding(
@@ -428,6 +442,8 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
 
   /// Fila seleccionable para copiar identificadores, rutas y valores técnicos.
   Widget _buildTechItem(String label, String value) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Column(
@@ -439,9 +455,10 @@ class _DetailScreenState extends ConsumerState<DetailScreen> {
           ),
           const SizedBox(height: 4),
           Container(
+            key: ValueKey('detailTechnicalValue-$label'),
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppTheme.lightGrey,
+              color: colorScheme.surfaceContainerHighest,
               borderRadius: BorderRadius.circular(4),
             ),
             child: SelectableText(

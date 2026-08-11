@@ -119,7 +119,7 @@ void main() {
     expect(find.text('Historial'), findsNothing);
   });
 
-  testWidgets('ajustes usa tarjetas oscuras con opciones disponibles de CUAC',
+  testWidgets('ajustes adapta sus tarjetas al tema y muestra opciones de CUAC',
       (tester) async {
     await tester.pumpWidget(
       const ProviderScope(
@@ -128,11 +128,22 @@ void main() {
     );
 
     final scaffold = tester.widget<Scaffold>(find.byType(Scaffold));
-    expect(scaffold.backgroundColor, const Color(0xFF060A13));
+    final settingsContext = tester.element(find.byType(SettingsScreen));
+    expect(
+      scaffold.backgroundColor,
+      Theme.of(settingsContext).colorScheme.surface,
+    );
+    expect(find.text('Apariencia'), findsOneWidget);
     expect(find.text('Reconocimiento'), findsOneWidget);
     expect(find.text('Cámara y permisos'), findsOneWidget);
     expect(find.text('Datos y privacidad'), findsOneWidget);
     expect(find.text('Información técnica'), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.text('Términos y licencias'),
+      250,
+      scrollable: find.byType(Scrollable),
+    );
     expect(find.text('Términos y licencias'), findsOneWidget);
 
     await tester.scrollUntilVisible(
@@ -166,11 +177,49 @@ void main() {
     await tester.pumpAndSettle();
     expect(notifier.favoriteLoads, 1);
 
-    await tester.tap(find.byIcon(Icons.favorite_border));
+    await tester.tap(find.byTooltip('Agregar a favoritos'));
     await tester.pumpAndSettle();
 
     expect(notifier.toggledIds, [scan.id]);
     expect(notifier.favoriteLoads, 2);
+  });
+
+  testWidgets(
+      'historial conserva todos los filtros cuando hoy y semana están vacíos',
+      (tester) async {
+    late _FakeHistoryNotifier notifier;
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          historyNotifierProvider.overrideWith((ref) {
+            notifier = _FakeHistoryNotifier(ref, scans: const []);
+            return notifier;
+          }),
+        ],
+        child: const MaterialApp(
+          home: HistoryScreen(loadOnStart: false),
+        ),
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('historyFilterToday')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.todayLoads, 1);
+    expect(find.text('No hay escaneos de hoy'), findsOneWidget);
+    expect(find.byKey(const Key('historyFilterAll')), findsOneWidget);
+    expect(find.byKey(const Key('historyFilterFavorites')), findsOneWidget);
+    expect(find.byKey(const Key('historyFilterToday')), findsOneWidget);
+    expect(find.byKey(const Key('historyFilterWeek')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('historyFilterWeek')));
+    await tester.pumpAndSettle();
+
+    expect(notifier.weekLoads, 1);
+    expect(find.text('No hay escaneos esta semana'), findsOneWidget);
+    expect(find.byKey(const Key('historyFilterAll')), findsOneWidget);
+    expect(find.byKey(const Key('historyFilterFavorites')), findsOneWidget);
   });
 
   testWidgets('detalle conserva el favorito cuando la actualización falla',
@@ -239,6 +288,8 @@ class _FakeHistoryNotifier extends HistoryNotifier {
   final bool toggleResult;
   final List<String> toggledIds = [];
   int favoriteLoads = 0;
+  int todayLoads = 0;
+  int weekLoads = 0;
 
   @override
   Future<void> loadHistory() async {
@@ -249,6 +300,18 @@ class _FakeHistoryNotifier extends HistoryNotifier {
   Future<void> loadFavorites() async {
     favoriteLoads++;
     state = HistoryState.success(_scans);
+  }
+
+  @override
+  Future<void> loadTodayScans() async {
+    todayLoads++;
+    state = const HistoryState.success([]);
+  }
+
+  @override
+  Future<void> loadWeekScans() async {
+    weekLoads++;
+    state = const HistoryState.success([]);
   }
 
   @override

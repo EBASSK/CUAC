@@ -28,6 +28,27 @@ class AppTheme {
   static const Color warningColor = Color(0xFFF59E0B);
   static const Color infoColor = Color(0xFF3B82F6);
 
+  // `fromSeed` genera todos los roles de Material 3 (contenedores, contornos y
+  // variantes de superficie) para que los componentes respondan de forma
+  // coherente al brillo claro u oscuro sin colores locales improvisados.
+  static final ColorScheme lightColorScheme = ColorScheme.fromSeed(
+    seedColor: primaryColor,
+    brightness: Brightness.light,
+  ).copyWith(
+    secondary: secondaryColor,
+    tertiary: accentColor,
+    error: errorColor,
+  );
+
+  static final ColorScheme darkColorScheme = ColorScheme.fromSeed(
+    seedColor: primaryColor,
+    brightness: Brightness.dark,
+  ).copyWith(
+    secondary: secondaryColor,
+    tertiary: accentColor,
+    error: errorColor,
+  );
+
   /// Tema claro construido sobre Material 3.
   ///
   /// Define los estilos por defecto de los controles para que las pantallas solo
@@ -35,21 +56,15 @@ class AppTheme {
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.light,
-    colorScheme: ColorScheme.light(
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: errorColor,
-      surface: whiteColor,
-    ),
-    scaffoldBackgroundColor: lightGrey,
-    appBarTheme: const AppBarTheme(
+    colorScheme: lightColorScheme,
+    scaffoldBackgroundColor: lightColorScheme.surface,
+    appBarTheme: AppBarTheme(
       elevation: 0,
-      backgroundColor: whiteColor,
-      foregroundColor: darkGrey,
+      backgroundColor: lightColorScheme.surface,
+      foregroundColor: lightColorScheme.onSurface,
       centerTitle: true,
       titleTextStyle: TextStyle(
-        color: darkGrey,
+        color: lightColorScheme.onSurface,
         fontSize: 20,
         fontWeight: FontWeight.bold,
         fontFamily: 'Poppins',
@@ -85,15 +100,15 @@ class AppTheme {
     ),
     inputDecorationTheme: InputDecorationTheme(
       filled: true,
-      fillColor: whiteColor,
+      fillColor: lightColorScheme.surfaceContainerLowest,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: lightGrey),
+        borderSide: BorderSide(color: lightColorScheme.outlineVariant),
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
-        borderSide: const BorderSide(color: lightGrey),
+        borderSide: BorderSide(color: lightColorScheme.outlineVariant),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(8),
@@ -103,15 +118,15 @@ class AppTheme {
         borderRadius: BorderRadius.circular(8),
         borderSide: const BorderSide(color: errorColor),
       ),
-      labelStyle: const TextStyle(
-        color: mediumGrey,
+      labelStyle: TextStyle(
+        color: lightColorScheme.onSurfaceVariant,
         fontFamily: 'Poppins',
       ),
     ),
     cardTheme: CardTheme(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: whiteColor,
+      color: lightColorScheme.surfaceContainerLow,
     ),
   );
 
@@ -119,21 +134,15 @@ class AppTheme {
   static final ThemeData darkTheme = ThemeData(
     useMaterial3: true,
     brightness: Brightness.dark,
-    colorScheme: ColorScheme.dark(
-      primary: primaryColor,
-      secondary: secondaryColor,
-      tertiary: accentColor,
-      error: errorColor,
-      surface: darkGrey,
-    ),
-    scaffoldBackgroundColor: const Color(0xFF111827),
-    appBarTheme: const AppBarTheme(
+    colorScheme: darkColorScheme,
+    scaffoldBackgroundColor: darkColorScheme.surface,
+    appBarTheme: AppBarTheme(
       elevation: 0,
-      backgroundColor: darkGrey,
-      foregroundColor: whiteColor,
+      backgroundColor: darkColorScheme.surface,
+      foregroundColor: darkColorScheme.onSurface,
       centerTitle: true,
       titleTextStyle: TextStyle(
-        color: whiteColor,
+        color: darkColorScheme.onSurface,
         fontSize: 20,
         fontWeight: FontWeight.bold,
         fontFamily: 'Poppins',
@@ -152,7 +161,7 @@ class AppTheme {
     cardTheme: CardTheme(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      color: darkGrey,
+      color: darkColorScheme.surfaceContainerLow,
     ),
   );
 
