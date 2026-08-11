@@ -4,31 +4,56 @@ import 'package:go_router/go_router.dart';
 import 'config/theme.dart';
 import 'config/app_config.dart';
 import 'models/scan_history.dart';
+import 'providers/theme_provider.dart';
 import 'screens/splash_screen.dart';
 import 'screens/camera_screen.dart';
 import 'screens/results_screen.dart';
 import 'screens/history_screen.dart';
 import 'screens/detail_screen.dart';
 import 'screens/settings_screen.dart';
+import 'services/theme_preferences_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // La preferencia se lee antes del primer frame para que la aplicación no
+  // muestre brevemente un tema distinto al que eligió el usuario.
+  final themePreferences = ThemePreferencesService();
+  final initialThemeMode = await themePreferences.loadThemeMode();
+
   // ProviderScope crea el contenedor global donde Riverpod conserva y comparte
   // el estado de los servicios durante toda la ejecución de la aplicación.
-  runApp(const ProviderScope(child: MyApp()));
+  runApp(
+    ProviderScope(
+      overrides: [
+        themePreferencesStoreProvider.overrideWithValue(themePreferences),
+        initialThemeModeProvider.overrideWithValue(initialThemeMode),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 /// Widget raíz de CUAC.
 ///
-/// Se implementa como [ConsumerWidget] para que el árbol principal pueda leer
-/// proveedores de Riverpod cuando la configuración global lo requiera.
-class MyApp extends ConsumerWidget {
+/// Conserva una única instancia del enrutador aunque cambie el tema. Así, una
+/// selección visual no reinicia la navegación ni devuelve al usuario al splash.
+class MyApp extends ConsumerStatefulWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    // GoRouter concentra la navegación declarativa y evita que cada pantalla
-    // tenga que conocer cómo construir el resto de destinos de la aplicación.
-    final router = GoRouter(
+  ConsumerState<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends ConsumerState<MyApp> {
+  late final GoRouter _router;
+
+  @override
+  void initState() {
+    super.initState();
+    // GoRouter se crea una sola vez para mantener la pila de rutas durante las
+    // reconstrucciones provocadas por una nueva preferencia de apariencia.
+    _router = GoRouter(
       // El splash es la entrada porque allí se preparan los recursos necesarios
       // antes de habilitar el flujo principal de captura.
       initialLocation: '/',
@@ -103,15 +128,26 @@ class MyApp extends ConsumerWidget {
         ),
       ),
     );
+  }
 
-    // MaterialApp.router enlaza GoRouter con Material 3 y selecciona el tema
-    // claro u oscuro según la preferencia configurada en el sistema operativo.
+  @override
+  void dispose() {
+    _router.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final themeMode = ref.watch(themeModeProvider);
+
+    // MaterialApp.router enlaza GoRouter con Material 3 y aplica en tiempo real
+    // el modo del sistema, claro u oscuro seleccionado desde Ajustes.
     return MaterialApp.router(
       title: AppConfig.appName,
       theme: AppTheme.lightTheme,
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
-      routerConfig: router,
+      themeMode: themeMode,
+      routerConfig: _router,
       debugShowCheckedModeBanner: false,
     );
   }

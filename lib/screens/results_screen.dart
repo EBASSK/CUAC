@@ -229,6 +229,9 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
 
     final topPrediction = predictions.first;
     final top3 = predictions.take(3).toList();
+    // Los roles del esquema se resuelven en cada construcción para que estas
+    // superficies cambien junto con el tema claro, oscuro o del dispositivo.
+    final colorScheme = Theme.of(context).colorScheme;
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppTheme.paddingMD),
@@ -262,12 +265,13 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                             ),
                             const SizedBox(height: 4),
                             Container(
+                              key: const Key('resultsCategoryBadge'),
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 8,
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: AppTheme.lightGrey,
+                                color: colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
@@ -276,7 +280,7 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                                     .textTheme
                                     .bodySmall
                                     ?.copyWith(
-                                      color: AppTheme.mediumGrey,
+                                      color: colorScheme.onSurfaceVariant,
                                     ),
                               ),
                             ),
@@ -297,34 +301,41 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
                             width: 3,
                           ),
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${(topPrediction.confidence * 100).toStringAsFixed(0)}%',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .displaySmall
-                                    ?.copyWith(
-                                      color: _getConfidenceColor(
-                                        topPrediction.confidence,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          // El medidor tiene un diámetro fijo. FittedBox reduce
+                          // el bloque únicamente cuando el escalado de texto del
+                          // dispositivo no cabe, evitando recortes u overflow.
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '${(topPrediction.confidence * 100).toStringAsFixed(0)}%',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .displaySmall
+                                      ?.copyWith(
+                                        color: _getConfidenceColor(
+                                          topPrediction.confidence,
+                                        ),
+                                        fontWeight: FontWeight.bold,
                                       ),
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                              ),
-                              Text(
-                                'Confianza',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                      color: Theme.of(context)
-                                          .colorScheme
-                                          .onSurfaceVariant,
-                                    ),
-                              ),
-                            ],
+                                ),
+                                Text(
+                                  'Confianza',
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                      ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -353,9 +364,11 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: Container(
+                key: ValueKey('resultsAlternative-${prediction.name}'),
                 padding: const EdgeInsets.all(AppTheme.paddingMD),
                 decoration: BoxDecoration(
-                  border: Border.all(color: AppTheme.lightGrey),
+                  color: colorScheme.surfaceContainerLow,
+                  border: Border.all(color: colorScheme.outlineVariant),
                   borderRadius: BorderRadius.circular(AppTheme.radiusMD),
                 ),
                 child: Row(
@@ -400,9 +413,10 @@ class _ResultsScreenState extends ConsumerState<ResultsScreen> {
             ),
             const SizedBox(height: 12),
             Container(
+              key: const Key('resultsInformationCard'),
               padding: const EdgeInsets.all(AppTheme.paddingMD),
               decoration: BoxDecoration(
-                color: AppTheme.lightGrey,
+                color: colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(AppTheme.radiusMD),
               ),
               child: Text(
